@@ -1,3 +1,5 @@
 build/
 *.exe
 *.o
+notes.txt
+.vscode

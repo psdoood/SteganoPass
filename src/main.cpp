@@ -1,12 +1,11 @@
 #include <iostream>
-
+#include "Steganography.h"
 #include "raylib.h"
 
 int main() {
     std::cout << "Hello, SteganoPass!" << std::endl;
     
-    std::cout << "Press Enter to exit...";
-    std::cin.get();
+    Steganography steg;
 
     return 0;
 } 
