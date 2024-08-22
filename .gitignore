@@ -3,3 +3,5 @@ build/
 *.o
 notes.txt
 .vscode
+imagesInput
+imagesOutput

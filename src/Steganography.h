@@ -5,7 +5,15 @@
 
 #include <string>
 #include <vector>
-#include "raylib.h"
+#include "../external/stb/stb_image.h"
+#include "../external/stb/stb_image_write.h"
+
+struct Image{
+    unsigned char* data;
+    int width;
+    int height;
+    int channels;
+};
 
 class Steganography {
     public:
@@ -26,6 +34,9 @@ class Steganography {
 
         //Converts image to PNG format
         Image convertToPNG(const std::string& inPath);
+
+        //Cleans image data from memory
+        void cleanImage(Image& img);
 
         //Returns original format of the input image
         std::string getOriginalFormat();

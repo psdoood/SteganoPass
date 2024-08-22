@@ -1,11 +1,11 @@
 #include <iostream>
 #include "Steganography.h"
-#include "raylib.h"
 
 int main() {
     std::cout << "Hello, SteganoPass!" << std::endl;
     
-    Steganography steg;
+    Steganography steg; 
+    steg.convertToPNG("imagesInput/lion.jpg");
 
     return 0;
 } 
