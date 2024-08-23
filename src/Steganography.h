@@ -47,7 +47,7 @@ class Steganography {
     private:
         //The format of the input image
         std::string originalFormat;
-        Image loadedImg;
+        Image loadedImg; //NOT CURRENTLY USING 
 };
 
 #endif 
