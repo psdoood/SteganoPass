@@ -21,19 +21,22 @@ class Steganography {
         ~Steganography(){}
 
         //Hides data in input image, and saves it to the output image
-        bool hideData(const std::string& inPath, const std::string& outPath, const std::vector<uint8_t>& data);
+        bool hideData(Image& img, const std::string& outPath, const std::vector<uint8_t>& data);
 
         //Extracts hidden data from an input image 
         std::vector<uint8_t> extractData(const std::string& inPath);
 
         //Checks if a given data size will fit in image
-        bool canHideData(const std::string& inPath, size_t dataSize);
+        bool canHideData(const Image& img, size_t dataSize);
 
-        //Returns the max amount of data that can be hidden in the image
-        size_t maxDataSize(const std::string& inPath); 
+        //Returns the max amount of data (in bytes) that can be hidden in the image
+        size_t maxDataSize(const Image& img); 
 
-        //Converts image to PNG format
-        Image convertToPNG(const std::string& inPath);
+        //Loads and converts image to PNG format
+        Image loadAndConvert(const std::string& inPath);
+        
+        //Saves the new image to new location 
+        bool saveImage(const Image& img, const std::string& outPath);
 
         //Cleans image data from memory
         void cleanImage(Image& img);
