@@ -11,15 +11,15 @@ bool Steganography::hideData(Image& img, const std::string& outPath, const std::
     size_t dataIndex = 0; size_t bitIndex = 0;
     size_t totalPixels = img.height * img.width;
     uint8_t dataSize = static_cast<uint8_t>(data.size());
-    //hide length of data first, so that it can be extracted
+    //Hide length of data first, so that it can be extracted later
     for(size_t i = 0; i < 8; i++){
         bool sizeBit = (dataSize >> i) & 1;
         img.data[i] = (img.data[i] & 0xFE) | sizeBit;
     }
-    //hide the actual bits that are stored in data 
+    //Hide the actual bits that are stored in data 
     for(size_t i = 8; i < totalPixels * 4; i++){
         if(dataIndex >= data.size()){
-            break; //all data has been hidden
+            break; //All data has been hidden
         }
         bool dataBit = (data[dataIndex] >> (7 - bitIndex) & 1);
         img.data[i] = (img.data[i] & 0xFE) | dataBit;
@@ -34,7 +34,7 @@ bool Steganography::hideData(Image& img, const std::string& outPath, const std::
      
 std::vector<uint8_t> Steganography::extractData(const std::string& inPath){
     Image img = loadAndConvert(inPath);
-    //determine the size of data, which is stored at the start
+    //Determine the size of data, which is stored in the first byte
     uint8_t dataSize = 0;
     for(size_t i = 0; i < 8; i++){
         bool sizeBit = img.data[i] & 1;  
@@ -71,7 +71,6 @@ bool Steganography::canHideData(const Image& img, size_t dataSize){
     }
     size_t maxSize = maxDataSize(img);
     return dataSize + sizeof(uint8_t) <= maxSize;
-       
 }
    
 size_t Steganography::maxDataSize(const Image& img){

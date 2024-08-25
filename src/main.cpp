@@ -4,6 +4,7 @@
 int main() {
     std::cout << "Hello, SteganoPass!" << std::endl;
     
+    //TESTING
     Steganography steg; 
     Image img = steg.loadAndConvert("imagesInput/bear.png");
     //steg.maxDataSize();
