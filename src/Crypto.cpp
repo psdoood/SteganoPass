@@ -2,6 +2,7 @@
 #include <random>
 #include <iostream>
 
+//Must be called first
 void Crypto::setKey(const std::string& inKey){
     m_key = padKey(stringToBytes(inKey));
 }
@@ -9,15 +10,46 @@ void Crypto::setKey(const std::string& inKey){
 //************************************************************************************************************//
 
 std::vector<uint8_t> Crypto::encryptData(const std::vector<uint8_t>& data){
-    std::vector<uint8_t> encryptedData;
+    if(m_key.empty()){
+        std::cerr << "KEY MUST BE SET BEFORE ENCRYPTION" << std::endl;
+        return std::vector<uint8_t>();
+    }
+    generateIV();
+    initCtx();
+
+    std::vector<uint8_t> paddedData = padData(data);
+    std::vector<uint8_t> encryptedData(paddedData.size() + AES_BLOCKLEN); //add room for iv 
+    
+    std::copy(m_iv.begin(), m_iv.end(), encryptedData.begin());
+
+    AES_CBC_encrypt_buffer(&m_ctx, paddedData.data(), paddedData.size());
+
+    std::copy(paddedData.begin(), paddedData.end(), encryptedData.begin() + AES_BLOCKLEN);
+    
+    reset();
     return encryptedData;
 }
 
 //************************************************************************************************************//
        
 std::vector<uint8_t> Crypto::decryptData(const std::vector<uint8_t>& data){
-    std::vector<uint8_t> decryptedData;
-    return decryptedData;
+    if(m_key.empty()){
+        std::cerr << "KEY MUST BE SET BEFORE DECRYPTION" << std::endl;
+        return std::vector<uint8_t>();
+    }
+    if(data.size() < AES_BLOCKLEN){
+        std::cerr << "ENCRYPTED DATA IS TOO SHORT" << std::endl;
+        return std::vector<uint8_t>();
+    }
+
+    std::vector<uint8_t> iv(data.begin(), data.begin() + AES_BLOCKLEN);
+    m_iv = iv;
+    initCtx();
+
+    std::vector<uint8_t> decryptedData(data.begin() + AES_BLOCKLEN, data.end());
+    AES_CBC_decrypt_buffer(&m_ctx, decryptedData.data(), decryptedData.size());
+
+    return unpad(decryptedData);
 }
 
 //************************************************************************************************************//
@@ -86,5 +118,15 @@ std::vector<uint8_t> Crypto::unpad(const std::vector<uint8_t>& data){
         std::cerr << "INVALID PADDING" << std::endl;
         return std::vector<uint8_t>();
     }
+    reset();
     return std::vector<uint8_t>(data.begin(), data.end() - paddingAmount);
+}
+
+//************************************************************************************************************//
+
+void Crypto::reset(){
+    std::fill(m_key.begin(), m_key.end(), 0);
+    std::fill(m_iv.begin(), m_iv.end(), 0);
+    m_key.clear();
+    m_iv.clear();
 }

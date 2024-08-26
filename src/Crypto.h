@@ -42,6 +42,9 @@ class Crypto {
         std::vector<uint8_t> padData(const std::vector<uint8_t>& data);
         std::vector<uint8_t> unpad(const std::vector<uint8_t>& data);
 
+        //Resets obj for next use
+        void reset();
+
 };
 
 #endif 
