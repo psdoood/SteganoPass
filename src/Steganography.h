@@ -8,6 +8,7 @@
 #include "../external/stb/stb_image.h"
 #include "../external/stb/stb_image_write.h"
 
+//Image type to store and keep track of loaded image data
 struct Image{
     unsigned char* data;
     int width;

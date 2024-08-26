@@ -31,6 +31,8 @@ bool Steganography::hideData(Image& img, const std::string& outPath, const std::
     }
     return saveImage(img, outPath);
 }
+
+//************************************************************************************************************//
      
 std::vector<uint8_t> Steganography::extractData(const std::string& inPath){
     Image img = loadAndConvert(inPath);
@@ -64,6 +66,8 @@ std::vector<uint8_t> Steganography::extractData(const std::string& inPath){
     return result;
 }
 
+//************************************************************************************************************//
+
 bool Steganography::canHideData(const Image& img, size_t dataSize){
     if(dataSize > UINT8_MAX){
         std::cerr << "DATA SIZE EXCEEDS MAX ALLOWED SIZE" << std::endl;
@@ -72,6 +76,8 @@ bool Steganography::canHideData(const Image& img, size_t dataSize){
     size_t maxSize = maxDataSize(img);
     return dataSize + sizeof(uint8_t) <= maxSize;
 }
+
+//************************************************************************************************************//
    
 size_t Steganography::maxDataSize(const Image& img){
     //each pixel can store 4 bits of data (RGBA), but only least signif. bit (lsb), so / 8
@@ -82,6 +88,7 @@ size_t Steganography::maxDataSize(const Image& img){
     return maxSize;
 }
   
+//************************************************************************************************************//
 
 Image Steganography::loadAndConvert(const std::string& inPath){
     int width, height, channels;
@@ -103,6 +110,8 @@ Image Steganography::loadAndConvert(const std::string& inPath){
     return img;
 }
 
+//************************************************************************************************************//
+
 //TODO -> error checking 
 bool Steganography::saveImage(const Image& img, const std::string& outPath){
     if(stbi_write_png(outPath.c_str(), img.width, img.height, 4, img.data, img.width * 4) == 0) {
@@ -111,6 +120,8 @@ bool Steganography::saveImage(const Image& img, const std::string& outPath){
     }
     return true;
 }
+
+//************************************************************************************************************//
 
 void Steganography::cleanImage(Image& img){
     if(img.data != nullptr){
@@ -121,6 +132,8 @@ void Steganography::cleanImage(Image& img){
         img.channels = 0;
     }
 }
+
+//************************************************************************************************************//
         
 std::string Steganography::getOriginalFormat(){
     return originalFormat;
