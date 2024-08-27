@@ -51,7 +51,10 @@ enable_testing()
 add_executable(
   SteganoPass_test
   tests/crypto_test.cpp
+  tests/steganography_test.cpp
   src/Crypto.cpp
+  src/Steganography.cpp
+  src/stb_impl.cpp
 )
 
 if(GTest_FOUND)
