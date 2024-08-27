@@ -4,16 +4,29 @@
 
 //Must be called first
 void Crypto::setKey(const std::string& inKey){
+    if(inKey.size() == 0){
+        std::cerr << "MUST PROVIDE INPUT KEY" << std::endl;
+        m_keyIsSet = false;
+        return;
+    }
+
     m_key = padKey(stringToBytes(inKey));
+    m_keyIsSet = true;
 }
 
 //************************************************************************************************************//
 
 std::vector<uint8_t> Crypto::encryptData(const std::vector<uint8_t>& data){
-    if(m_key.empty()){
+    if(m_key.empty() && !isKeySet()){
         std::cerr << "KEY MUST BE SET BEFORE ENCRYPTION" << std::endl;
         return std::vector<uint8_t>();
     }
+
+    if(data.size() == 0 || data.empty()){
+        std::cerr << "MUST PROVIDE DATA TO ENCRYPT" << std::endl;
+        return std::vector<uint8_t>();
+    }
+
     generateIV();
     initCtx();
 
@@ -25,7 +38,7 @@ std::vector<uint8_t> Crypto::encryptData(const std::vector<uint8_t>& data){
     AES_CBC_encrypt_buffer(&m_ctx, paddedData.data(), paddedData.size());
 
     std::copy(paddedData.begin(), paddedData.end(), encryptedData.begin() + AES_BLOCKLEN);
-    
+
     reset();
     return encryptedData;
 }
@@ -33,7 +46,7 @@ std::vector<uint8_t> Crypto::encryptData(const std::vector<uint8_t>& data){
 //************************************************************************************************************//
        
 std::vector<uint8_t> Crypto::decryptData(const std::vector<uint8_t>& data){
-    if(m_key.empty()){
+    if(m_key.empty() && !isKeySet()){
         std::cerr << "KEY MUST BE SET BEFORE DECRYPTION" << std::endl;
         return std::vector<uint8_t>();
     }
@@ -113,9 +126,19 @@ std::vector<uint8_t> Crypto::padData(const std::vector<uint8_t>& data){
 //************************************************************************************************************//
 
 std::vector<uint8_t> Crypto::unpad(const std::vector<uint8_t>& data){
+    if(data.empty()){
+        std::cerr << "EMPTY DATA" << std::endl;
+        return std::vector<uint8_t>();
+    }
+
     size_t paddingAmount = data.back();
     if(paddingAmount == 0 || paddingAmount > AES_BLOCKLEN){
-        std::cerr << "INVALID PADDING" << std::endl;
+        std::cerr << "DECRYPTION FAILED" << std::endl;
+        return std::vector<uint8_t>();
+    }
+
+    if(data.size() < paddingAmount){
+        std::cerr << "DATA TOO SHORT FOR PADDING" << std::endl;
         return std::vector<uint8_t>();
     }
     reset();
@@ -129,4 +152,10 @@ void Crypto::reset(){
     std::fill(m_iv.begin(), m_iv.end(), 0);
     m_key.clear();
     m_iv.clear();
+}
+
+//************************************************************************************************************//
+
+bool Crypto::isKeySet(){
+    return m_keyIsSet;
 }

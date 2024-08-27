@@ -1,5 +1,6 @@
 #include <iostream>
 #include "Steganography.h"
+#include "Crypto.h"
 
 int main() {
     std::cout << "Hello, SteganoPass!" << std::endl;
@@ -10,7 +11,7 @@ int main() {
     //steg.maxDataSize();
     //steg.hideData();
 
-    std::string password = "PASSWORD1234567897890";
+    std::string password = "password123$";
     std::vector<uint8_t> data(password.begin(), password.end());
     steg.hideData(img, "imagesOutput/bear.png", data);
     steg.extractData("imagesOutput/bear.png");

@@ -4,4 +4,4 @@ cd build
 cmake ..
 cmake --build . --config Release
 cd ..
-echo Build completed. Executable can be found in build\Release\
+echo Build completed. Executable and Tests can be found in build\Release\

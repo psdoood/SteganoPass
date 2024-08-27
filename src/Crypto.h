@@ -15,6 +15,9 @@ class Crypto {
         //Sets the encryption/decryption key 
         void setKey(const std::string& inKey);
 
+        //Checks if a key has been set
+        bool isKeySet();
+
         //Inputs data to be encrypted
         std::vector<uint8_t> encryptData(const std::vector<uint8_t>& data);
 
@@ -27,6 +30,7 @@ class Crypto {
     
     private:
         std::vector<uint8_t> m_key; 
+        bool m_keyIsSet = false;
         std::vector<uint8_t> m_iv;
         AES_ctx m_ctx;
 
