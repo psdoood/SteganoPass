@@ -58,23 +58,14 @@ std::vector<uint8_t> Steganography::extractData(const std::string& inPath){
     }
 
     cleanImage(img);
-
-    //TESTING 
-    std::string resultString(result.begin(), result.end());
-    std::cout << "Extracted data as string: " << resultString << std::endl;
-
     return result;
 }
 
 //************************************************************************************************************//
 
 bool Steganography::canHideData(const Image& img, size_t dataSize){
-    if(dataSize > UINT8_MAX){
-        std::cerr << "DATA SIZE EXCEEDS MAX ALLOWED SIZE" << std::endl;
-        return false;
-    }
     size_t maxSize = maxDataSize(img);
-    return dataSize + sizeof(uint8_t) <= maxSize;
+    return dataSize <= maxSize;
 }
 
 //************************************************************************************************************//
@@ -83,7 +74,7 @@ size_t Steganography::maxDataSize(const Image& img){
     //each pixel can store 4 bits of data (RGBA), but only least signif. bit (lsb), so / 8
     size_t maxSize = (4 * img.height * img.width) / 8;
     //add room for metadata (size of total hidden data)
-    maxSize -= sizeof(uint8_t);
+    maxSize -= 1;
     
     return maxSize;
 }
@@ -137,4 +128,10 @@ void Steganography::cleanImage(Image& img){
         
 std::string Steganography::getOriginalFormat(){
     return originalFormat;
+}
+
+//************************************************************************************************************//
+
+std::string Steganography::convertToStr(const std::vector<uint8_t>& data){
+    return std::string(data.begin(), data.end());
 }

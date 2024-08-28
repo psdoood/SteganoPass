@@ -44,6 +44,9 @@ class Steganography {
 
         //Returns original format of the input image
         std::string getOriginalFormat();
+
+        //Converts binary data to string
+        std::string convertToStr(const std::vector<uint8_t>& data);
     
     private:
         //The format of the input image

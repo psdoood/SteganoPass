@@ -3,19 +3,8 @@
 #include "Crypto.h"
 
 int main() {
-    std::cout << "Hello, SteganoPass!" << std::endl;
-    
-    //TESTING
-    Steganography steg; 
-    Image img = steg.loadAndConvert("imagesInput/bear.png");
-    //steg.maxDataSize();
-    //steg.hideData();
+    std::cout << "Thanks for using SteganoPass!" << std::endl;
 
-    std::string password = "password123$";
-    std::vector<uint8_t> data(password.begin(), password.end());
-    steg.hideData(img, "imagesOutput/bear.png", data);
-    steg.extractData("imagesOutput/bear.png");
 
-    steg.cleanImage(img);
     return 0;
 } 
