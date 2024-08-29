@@ -9,3 +9,6 @@ This is a lightweight, privacy focused password concealer that uses steganograph
 - Extracts passwords from images if user can provide image and key
 - Support for multiple image formats (PNG, BMP, JPG, etc..)
 - Simple and intuitive GUI
+
+## Requirements
+-Must have CMake and Opengl Installed
