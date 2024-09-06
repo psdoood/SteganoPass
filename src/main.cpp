@@ -45,7 +45,6 @@ int main(int, char**)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        //Window Creation
         //ImGui::ShowDemoWindow();
         appUI::renderUI();
 
