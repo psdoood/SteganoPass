@@ -39,6 +39,7 @@ find_package(OpenGL REQUIRED)
 # Main executable
 add_executable(SteganoPass
     src/main.cpp
+    src/Application.cpp
     src/Steganography.cpp
     src/stb_impl.cpp
     src/Crypto.cpp

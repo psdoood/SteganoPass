@@ -11,4 +11,4 @@ This is a lightweight, privacy focused password concealer that uses steganograph
 - Simple and intuitive GUI
 
 ## Requirements
--Must have CMake and Opengl Installed
+-Must have CMake and OpenGL Installed

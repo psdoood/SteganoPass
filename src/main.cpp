@@ -2,8 +2,10 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h>
+
 #include "Steganography.h"
 #include "Crypto.h"
+#include "Application.h"
 
 int main(int, char**)
 {
@@ -44,7 +46,9 @@ int main(int, char**)
         ImGui::NewFrame();
 
         //Window Creation
-        ImGui::ShowDemoWindow();
+        //ImGui::ShowDemoWindow();
+        appUI::renderUI();
+
 
         //Rendering
         ImGui::Render();
@@ -68,3 +72,5 @@ int main(int, char**)
 
     return 0;
 }
+
+
