@@ -20,7 +20,6 @@ namespace appUI
     static char masterKey[256] = "";
     static char data[1024] = "";//adjust
     static char extractedData[1024] = "";//adjust
-    static bool showFileExplorer = false;
     static std::string currentPath = std::filesystem::current_path().string();
     static std::string lastLoadedPath = "";
     static std::vector<std::string> files;
@@ -69,109 +68,85 @@ namespace appUI
 
     void renderUI(){
         ImGuiWindowFlags window_flags = 0;
-        window_flags |= ImGuiWindowFlags_NoScrollbar;
         window_flags |= ImGuiWindowFlags_NoCollapse;
-        window_flags |= ImGuiWindowFlags_NoNav;
-        window_flags |= ImGuiWindowFlags_MenuBar;
         window_flags |= ImGuiWindowFlags_NoResize;
-        window_flags |= ImGuiWindowFlags_NoDecoration;
-        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+        window_flags |= ImGuiWindowFlags_NoMove;
 
         //Cause the UI to be fullscreen in relation to the glfw window
         const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y), ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(main_viewport->WorkSize.x, main_viewport->WorkSize.y), ImGuiCond_Always);
-
-
-        ImGui::Begin("SteganoPass", nullptr, window_flags);
+        ImGui::Begin("SteganoPass", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
         //Get width of the window for button and text placement 
-        float windowWidth = ImGui::GetWindowSize().x;
-        float halfWidth = windowWidth * 0.5 - ImGui::GetStyle().ItemSpacing.x;
-        float startY = ImGui::GetCursorPosY();
+        float windowWidth = ImGui::GetWindowWidth();
+        float windowHeight = ImGui::GetWindowHeight();
+        float halfWidth = windowWidth * 0.5f; 
+        float topSectionHeight = windowHeight * 0.6f;
+        float bottomSectionHeight = windowHeight * 0.4f;
+
+        //Section for file explorer
+        ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y));
+        ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
+        ImGui::Begin("File Explorer", nullptr, window_flags);
+            
+        if(ImGui::Button("<- Go Back")){
+            currentPath = std::filesystem::path(currentPath).parent_path().string();
+            updateFiles();
+        }
+        ImGui::Text("Current Path: %s", currentPath);
+        if(files.empty()){
+            ImGui::Text("No images in this directory");
+        }else{
+            for(const auto& file : files){
+                if(ImGui::Selectable(file.c_str())){
+                    std::string fullPath = (std::filesystem::path(currentPath) / file).string();
+                    bool isDirectory = std::filesystem::is_directory(fullPath);
+                    if(isDirectory){
+                        currentPath = fullPath;
+                        updateFiles();
+                    }else{
+                        inImagePath = fullPath;
+                        if(inImageTexture != 0){
+                            glDeleteTextures(1, &inImageTexture);
+                            inImageTexture = 0;
+                        }
+                            inImageTexture = loadTexture(inImagePath);
+                    }
+                }
+            }
+        }
+        ImGui::End();
+         
         
-        ImGui::SameLine(0, ImGui::GetStyle().ItemSpacing.x);
-
-
         //Input image section
-        ImGui::BeginGroup();
-        float inTextWidth = ImGui::CalcTextSize("Input Image").x;
-        ImGui::SetCursorPos(ImVec2((halfWidth - inTextWidth) * 0.5f, startY));
-        ImGui::Text("Input Image");
-        ImGui::SetCursorPos(ImVec2(0, startY + ImGui::GetTextLineHeightWithSpacing()));
+        ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + halfWidth, main_viewport->WorkPos.y));
+        ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
+        ImGui::Begin("Input Image", nullptr, window_flags);
 
         if(inImageTexture == 0){
-            ImGui::Button(inImagePath.c_str(), ImVec2(halfWidth, 400));
+            ImGui::Button(inImagePath.c_str(), ImVec2(halfWidth - 20, topSectionHeight - 40));
         } else{
             float aspectRatio = 0.0f;
-            ImVec2 imageSize(halfWidth, halfWidth);
+            ImVec2 imageSize(halfWidth - 20, halfWidth - 40);
             if(inImagePath != lastLoadedPath){
                 Image loadedImg = steganoObj.loadAndConvert(inImagePath);
                 aspectRatio = (float)loadedImg.width / loadedImg.height;
-                imageSize.x = halfWidth;
+                imageSize.x = std::min(imageSize.x, imageSize.y * aspectRatio);
                 imageSize.y = halfWidth / aspectRatio;
                 steganoObj.cleanImage(loadedImg);
                 lastLoadedPath = inImagePath;
             }
+            ImGui::SetCursorPos(ImVec2((halfWidth - imageSize.x) * 0.5f, (topSectionHeight - imageSize.y) * 0.5f));
             ImGui::Image((void*)(intptr_t)inImageTexture, imageSize);
         }
-        ImGui::EndGroup();
-
-        ImGui::SameLine(0, ImGui::GetStyle().ItemSpacing.x);
+        ImGui::End();
 
 
-        //Output image section
-        ImGui::BeginGroup();
-        float outTextWidth = ImGui::CalcTextSize("Output Image").x;
-        ImGui::SetCursorPos(ImVec2(windowWidth * 0.5f + (halfWidth - outTextWidth) * 0.5f, startY));
-        ImGui::Text("Output Image");
-        ImGui::SetCursorPos(ImVec2(windowWidth * 0.5f, startY + ImGui::GetTextLineHeightWithSpacing()));
-        
-        if(outImageTexture == 0){
-            ImGui::Button(outImagePath.c_str(), ImVec2(halfWidth, 400));
-        } else{
-            ImGui::Image((void*)(intptr_t)outImageTexture, ImVec2(halfWidth, 400));
-        }
-        ImGui::EndGroup();
-
-
-        //Section for file explorer
-        if(ImGui::Button("Open File Explorer")){
-            showFileExplorer = true;
-            updateFiles();
-        }
-        if(showFileExplorer){
-            ImGui::Begin("File Explorer", &showFileExplorer);
-            
-            if(ImGui::Button("<- Go Back")){
-                currentPath = std::filesystem::path(currentPath).parent_path().string();
-                updateFiles();
-            }
-            if(files.empty()){
-                ImGui::Text("No images in this directory");
-            }else{
-                for(const auto& file : files){
-                    if(ImGui::Selectable(file.c_str())){
-                        std::string fullPath = (std::filesystem::path(currentPath) / file).string();
-                        bool isDirectory = std::filesystem::is_directory(fullPath);
-                        if(isDirectory){
-                            currentPath = fullPath;
-                            updateFiles();
-                        }else{
-                            inImagePath = fullPath;
-                            if(inImageTexture != 0){
-                                glDeleteTextures(1, &inImageTexture);
-                                inImageTexture = 0;
-                            }
-                            inImageTexture = loadTexture(inImagePath);
-                            showFileExplorer = false;
-                        }
-                    }
-                }
-            }
-            ImGui::End();
-        }
-
+        // Controls Window
+        ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y + topSectionHeight));
+        ImGui::SetNextWindowSize(ImVec2(windowWidth, bottomSectionHeight));
+        ImGui::Begin("Controls", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
 
         ImGui::InputTextWithHint("Key (Up to 16 Characters in Length)","<Master Key>", masterKey, AES_KEYLEN, ImGuiInputTextFlags_Password);
         ImGui::InputTextWithHint("Data to Hide", "<Data>", data, IM_ARRAYSIZE(data)); //adjust buffer size at some point
@@ -184,6 +159,8 @@ namespace appUI
         if(ImGui::Button("Extract Data from Image")){
             //call steg/crypto functions 
         }
+
+        ImGui::End();
 
         ImGui::End();
     }
