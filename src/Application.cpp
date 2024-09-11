@@ -14,9 +14,8 @@ namespace appUI
     static Steganography steganoObj;
     static Crypto cryptoObj;
     static std::string inImagePath = "Input Image Shown Here";
-    static std::string outImagePath = "Altered Image Shown Here";
+    static std::string outImagePath = "Select New Path";
     static GLuint inImageTexture = 0;
-    static GLuint outImageTexture = 0; 
     static char masterKey[256] = "";//adjust
     static char data[1024] = "";//adjust
     static char extractedData[1024] = "";//adjust
@@ -91,12 +90,16 @@ namespace appUI
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
         ImGui::Begin("File Explorer", nullptr, window_flags);
             
+        if(ImGui::Button("Set New Location for Image")){
+            outImagePath = currentPath;
+        }
+        ImGui::SameLine();
+        ImGui::Text("Current Path: %s", currentPath.c_str());
+        ImGui::Text("");
         if(ImGui::Button("<- Go Back")){
             currentPath = std::filesystem::path(currentPath).parent_path().string();
             updateFiles();
         }
-        ImGui::SameLine();
-        ImGui::Text("Current Path: %s", currentPath.c_str());
         if(files.empty()){
             ImGui::Text("No images/folders in this directory");
         }else{
@@ -165,18 +168,32 @@ namespace appUI
         //Save image window section
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + halfWidth, main_viewport->WorkPos.y + topSectionHeight));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, bottomSectionHeight));
-        ImGui::Begin("Save Altered Image", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
-        if(ImGui::Button("Save over original")){
-            ImGui::SetItemTooltip("Not recommended!");
-            
-        }
+        ImGui::Begin("Settings", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
+
         if(ImGui::Button("Save to new location")){
             //showSaveAs = true;
             //updateFiles();
         }
+        ImGui::SameLine();
+        ImGui::Text(outImagePath.c_str(), ImGuiInputTextFlags_ReadOnly);
+
+        if(ImGui::Button("Save over original")){
+           
+        }
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){
+            ImGui::SetTooltip("Not Recommended.");
+        }
+
         if(ImGui::Button("Clear Input Image")){
             inImageTexture = 0;
             inImagePath = "Input Image Shown Here";
+            outImagePath = "Select New Path";
+        }
+
+        if(ImGui::Button("Clear Control Data")){
+            memset(masterKey, 0, sizeof(masterKey));
+            memset(data, 0, sizeof(data));
+            memset(extractedData, 0, sizeof(extractedData));
         }
 
         ImGui::End();
