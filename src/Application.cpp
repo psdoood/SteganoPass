@@ -17,12 +17,13 @@ namespace appUI
     static std::string outImagePath = "Altered Image Shown Here";
     static GLuint inImageTexture = 0;
     static GLuint outImageTexture = 0; 
-    static char masterKey[256] = "";
+    static char masterKey[256] = "";//adjust
     static char data[1024] = "";//adjust
     static char extractedData[1024] = "";//adjust
     static std::string currentPath = std::filesystem::current_path().string();
     static std::string lastLoadedPath = "";
     static std::vector<std::string> files;
+    bool showSaveAs = false;
     
     
     //************************************************************************************************************//
@@ -165,8 +166,18 @@ namespace appUI
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + halfWidth, main_viewport->WorkPos.y + topSectionHeight));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, bottomSectionHeight));
         ImGui::Begin("Save Altered Image", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
-        ImGui::Button("Save over original");
-        ImGui::Button("Save to new location");
+        if(ImGui::Button("Save over original")){
+            ImGui::SetItemTooltip("Not recommended!");
+            
+        }
+        if(ImGui::Button("Save to new location")){
+            //showSaveAs = true;
+            //updateFiles();
+        }
+        if(ImGui::Button("Clear Input Image")){
+            inImageTexture = 0;
+            inImagePath = "Input Image Shown Here";
+        }
 
         ImGui::End();
 
