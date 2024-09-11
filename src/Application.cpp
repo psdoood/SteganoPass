@@ -82,10 +82,10 @@ namespace appUI
         float windowWidth = ImGui::GetWindowWidth();
         float windowHeight = ImGui::GetWindowHeight();
         float halfWidth = windowWidth * 0.5f; 
-        float topSectionHeight = windowHeight * 0.6f;
-        float bottomSectionHeight = windowHeight * 0.4f;
+        float topSectionHeight = windowHeight * 0.8f;
+        float bottomSectionHeight = windowHeight * 0.2f;
 
-        //Section for file explorer
+        //File explorer window section
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
         ImGui::Begin("File Explorer", nullptr, window_flags);
@@ -94,9 +94,10 @@ namespace appUI
             currentPath = std::filesystem::path(currentPath).parent_path().string();
             updateFiles();
         }
-        ImGui::Text("Current Path: %s", currentPath);
+        ImGui::SameLine();
+        ImGui::Text("Current Path: %s", currentPath.c_str());
         if(files.empty()){
-            ImGui::Text("No images in this directory");
+            ImGui::Text("No images/folders in this directory");
         }else{
             for(const auto& file : files){
                 if(ImGui::Selectable(file.c_str())){
@@ -119,7 +120,7 @@ namespace appUI
         ImGui::End();
          
         
-        //Input image section
+        //Input image window section
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + halfWidth, main_viewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
         ImGui::Begin("Input Image", nullptr, window_flags);
@@ -143,22 +144,29 @@ namespace appUI
         ImGui::End();
 
 
-        // Controls Window
+        //Control window section
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y + topSectionHeight));
-        ImGui::SetNextWindowSize(ImVec2(windowWidth, bottomSectionHeight));
+        ImGui::SetNextWindowSize(ImVec2(halfWidth, bottomSectionHeight));
         ImGui::Begin("Controls", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
 
-        ImGui::InputTextWithHint("Key (Up to 16 Characters in Length)","<Master Key>", masterKey, AES_KEYLEN, ImGuiInputTextFlags_Password);
-        ImGui::InputTextWithHint("Data to Hide", "<Data>", data, IM_ARRAYSIZE(data)); //adjust buffer size at some point
-        //ImGui::Text("Extracted Data", extractedData, IM_ARRAYSIZE(extractedData));
+        ImGui::InputTextWithHint(" ","<Master Key>", masterKey, AES_KEYLEN, ImGuiInputTextFlags_Password);
+        ImGui::InputTextWithHint("  ", "<Data to Hide>", data, IM_ARRAYSIZE(data)); //adjust buffer size at some point
 
         if(ImGui::Button("Hide Data in Image")){
             //call steg/crypto funcitons
         }
-        ImGui::SameLine();
+        ImGui::InputTextWithHint("   ", "<Extracted Data>", extractedData, IM_ARRAYSIZE(extractedData), ImGuiInputTextFlags_ReadOnly);
         if(ImGui::Button("Extract Data from Image")){
             //call steg/crypto functions 
         }
+        ImGui::End();
+
+        //Save image window section
+        ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + halfWidth, main_viewport->WorkPos.y + topSectionHeight));
+        ImGui::SetNextWindowSize(ImVec2(halfWidth, bottomSectionHeight));
+        ImGui::Begin("Save Altered Image", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
+        ImGui::Button("Save over original");
+        ImGui::Button("Save to new location");
 
         ImGui::End();
 
