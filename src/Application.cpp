@@ -4,6 +4,7 @@
 #include <vector>
 #include <filesystem>
 #include <algorithm>
+#include <iostream>
 
 #include "Crypto.h"
 #include "Steganography.h"
@@ -146,22 +147,25 @@ namespace appUI
                 currentPath = std::filesystem::path(currentPath).parent_path().string();
                 updateFiles();
             }
-
-            for(const auto& file : files){
-                if(ImGui::Selectable(file.c_str())){
-                    std::string fullPath = (std::filesystem::path(currentPath) / file).string();
-                    bool isDirectory = std::filesystem::is_directory(fullPath);
-                    if(isDirectory){
-                        currentPath = fullPath;
-                        updateFiles();
-                    }else{
-                        inImagePath = fullPath;
-                        if(inImageTexture != 0){
-                            glDeleteTextures(1, &inImageTexture);
-                            inImageTexture = 0;
+            if(files.empty()){
+                ImGui::Text("No images in this directory");
+            }else{
+                for(const auto& file : files){
+                    if(ImGui::Selectable(file.c_str())){
+                        std::string fullPath = (std::filesystem::path(currentPath) / file).string();
+                        bool isDirectory = std::filesystem::is_directory(fullPath);
+                        if(isDirectory){
+                            currentPath = fullPath;
+                            updateFiles();
+                        }else{
+                            inImagePath = fullPath;
+                            if(inImageTexture != 0){
+                                glDeleteTextures(1, &inImageTexture);
+                                inImageTexture = 0;
+                            }
+                            inImageTexture = loadTexture(inImagePath);
+                            showFileExplorer = false;
                         }
-                        inImageTexture = loadTexture(inImagePath);
-                        showFileExplorer = false;
                     }
                 }
             }
@@ -169,8 +173,8 @@ namespace appUI
         }
 
 
-        ImGui::InputText("Master Key", masterKey, AES_KEYLEN);
-        ImGui::InputText("Data to Hide", data, IM_ARRAYSIZE(data)); //adjust buffer size at some point
+        ImGui::InputTextWithHint("Key (Up to 16 Characters in Length)","<Master Key>", masterKey, AES_KEYLEN, ImGuiInputTextFlags_Password);
+        ImGui::InputTextWithHint("Data to Hide", "<Data>", data, IM_ARRAYSIZE(data)); //adjust buffer size at some point
         //ImGui::Text("Extracted Data", extractedData, IM_ARRAYSIZE(extractedData));
 
         if(ImGui::Button("Hide Data in Image")){
