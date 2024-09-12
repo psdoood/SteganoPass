@@ -22,7 +22,9 @@ namespace appUI
     static std::string currentPath = std::filesystem::current_path().string();
     static std::string lastLoadedPath;
     static std::vector<std::string> files;
-    bool showSaveAs = false;
+    bool noKeyWarning = false;
+    bool noDataWarning = false;
+
     
     
     //************************************************************************************************************//
@@ -85,6 +87,8 @@ namespace appUI
         float topSectionHeight = windowHeight * 0.8f;
         float bottomSectionHeight = windowHeight * 0.2f;
 
+        //........................................................................................................//
+
         //File explorer window section
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
@@ -123,6 +127,7 @@ namespace appUI
         }
         ImGui::End();
          
+        //........................................................................................................//
         
         //Input image window section
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + halfWidth, main_viewport->WorkPos.y));
@@ -147,21 +152,27 @@ namespace appUI
         }
         ImGui::End();
 
+        //........................................................................................................//
 
         //Control window section
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y + topSectionHeight));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, bottomSectionHeight));
-        ImGui::Begin("Controls", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
+        ImGui::Begin("Control", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
 
         ImGui::InputTextWithHint(" ","<Master Key>", masterKey, AES_KEYLEN, ImGuiInputTextFlags_Password);
         ImGui::InputTextWithHint("  ", "<Data to Hide>", data, IM_ARRAYSIZE(data)); //adjust buffer size at some point
 
         if(ImGui::Button("Hide Data in Image")){
-            //TODO - FIELD CHECKING 
+            if(masterKey[0] == '\0'){
+                noKeyWarning = true;
+            } else if(data[0] == '\0'){
+                noDataWarning = true;
+            } else{
             Image loadedImg = steganoObj.loadAndConvert(inImagePath);
             std::string dataStr = data;
             std::vector<uint8_t> dataBits(dataStr.begin(), dataStr.end());
             steganoObj.hideData(loadedImg, dataBits);
+            }
         }
         ImGui::InputTextWithHint("   ", "<Extracted Data>", extractedData, IM_ARRAYSIZE(extractedData), ImGuiInputTextFlags_ReadOnly);
         if(ImGui::Button("Extract Data from Image")){
@@ -169,14 +180,15 @@ namespace appUI
         }
         ImGui::End();
 
+        //........................................................................................................//
+
         //Save image window section
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + halfWidth, main_viewport->WorkPos.y + topSectionHeight));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, bottomSectionHeight));
         ImGui::Begin("Settings", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
 
         if(ImGui::Button("Save to new location")){
-            //showSaveAs = true;
-            //updateFiles();
+            
         }
         ImGui::SameLine();
         ImGui::Text(outImagePath.c_str(), ImGuiInputTextFlags_ReadOnly);
@@ -191,7 +203,6 @@ namespace appUI
         if(ImGui::Button("Clear Input Image")){
             inImageTexture = 0;
             inImagePath = "Input Image Shown Here";
-            outImagePath = "Select New Path";
         }
 
         if(ImGui::Button("Clear Control Data")){
@@ -200,7 +211,38 @@ namespace appUI
             memset(extractedData, 0, sizeof(extractedData));
         }
 
+        if(ImGui::Button("Clear Save Location")){
+            outImagePath = "Select New Path";
+        }
+
         ImGui::End();
+
+        //........................................................................................................//
+
+        //Pop up window section
+        if(noKeyWarning){
+            ImGui::OpenPopup("Warning: No Key Set");
+        }
+        if(ImGui::BeginPopupModal("Warning: No Key Set", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
+            ImGui::Text("Enter a key in the control window before hiding data.");
+            if(ImGui::Button("Close", ImVec2(120, 0))){
+                noKeyWarning = false;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
+        if(noDataWarning){
+            ImGui::OpenPopup("Warning: No Data Entered");
+        }
+        if(ImGui::BeginPopupModal("Warning: No Data Entered", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
+            ImGui::Text("Enter data in the control window before hiding data.");
+            if(ImGui::Button("Close", ImVec2(120, 0))){
+                noDataWarning = false;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
 
         ImGui::End();
     }
