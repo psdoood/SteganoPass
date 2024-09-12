@@ -21,7 +21,8 @@ TEST_F(SteganographyTest, HideAndExtract){
     std::vector<uint8_t> data(originalData.begin(), originalData.end());
 
     Image img = steg.loadAndConvert(testImgPath);
-    steg.hideData(img, outImgPath, data);
+    steg.hideData(img, data);
+    steg.saveImage(img, outImgPath);
 
     std::string extractedData = steg.convertToStr(steg.extractData(outImgPath));
     
@@ -72,5 +73,5 @@ TEST_F(SteganographyTest, hideDataTooLarge){
     Image img = steg.loadAndConvert(testImgPath);
     std::vector<uint8_t> largeData(steg.maxDataSize(img) + 1, '0');
 
-    EXPECT_FALSE(steg.hideData(img, outImgPath, largeData));
+    EXPECT_FALSE(steg.hideData(img, largeData));
 }

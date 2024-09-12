@@ -22,7 +22,7 @@ class Steganography {
         ~Steganography(){}
 
         //Hides data in input image, and saves it to the output image
-        bool hideData(Image& img, const std::string& outPath, const std::vector<uint8_t>& data);
+        bool hideData(Image& img, const std::vector<uint8_t>& data);
 
         //Extracts hidden data from an input image 
         std::vector<uint8_t> extractData(const std::string& inPath);

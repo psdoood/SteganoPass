@@ -2,7 +2,7 @@
 #include <iostream>
 #include <cstring>
 
-bool Steganography::hideData(Image& img, const std::string& outPath, const std::vector<uint8_t>& data){
+bool Steganography::hideData(Image& img, const std::vector<uint8_t>& data){
     if(!canHideData(img, data.size())){
         std::cerr << "CANNOT HIDE DATA IN IMAGE" << std::endl;
         return false;
@@ -29,7 +29,7 @@ bool Steganography::hideData(Image& img, const std::string& outPath, const std::
             dataIndex++;
         }
     }
-    return saveImage(img, outPath);
+    return true;
 }
 
 //************************************************************************************************************//

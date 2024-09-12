@@ -16,11 +16,11 @@ namespace appUI
     static std::string inImagePath = "Input Image Shown Here";
     static std::string outImagePath = "Select New Path";
     static GLuint inImageTexture = 0;
-    static char masterKey[256] = "";//adjust
-    static char data[1024] = "";//adjust
-    static char extractedData[1024] = "";//adjust
+    static char masterKey[256];//adjust
+    static char data[1024];//adjust
+    static char extractedData[1024];//adjust
     static std::string currentPath = std::filesystem::current_path().string();
-    static std::string lastLoadedPath = "";
+    static std::string lastLoadedPath;
     static std::vector<std::string> files;
     bool showSaveAs = false;
     
@@ -90,7 +90,7 @@ namespace appUI
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
         ImGui::Begin("File Explorer", nullptr, window_flags);
             
-        if(ImGui::Button("Set New Location for Image")){
+        if(ImGui::Button("Set as New Location to Save Image")){
             outImagePath = currentPath;
         }
         ImGui::SameLine();
@@ -157,7 +157,11 @@ namespace appUI
         ImGui::InputTextWithHint("  ", "<Data to Hide>", data, IM_ARRAYSIZE(data)); //adjust buffer size at some point
 
         if(ImGui::Button("Hide Data in Image")){
-            //call steg/crypto funcitons
+            //TODO - FIELD CHECKING 
+            Image loadedImg = steganoObj.loadAndConvert(inImagePath);
+            std::string dataStr = data;
+            std::vector<uint8_t> dataBits(dataStr.begin(), dataStr.end());
+            steganoObj.hideData(loadedImg, dataBits);
         }
         ImGui::InputTextWithHint("   ", "<Extracted Data>", extractedData, IM_ARRAYSIZE(extractedData), ImGuiInputTextFlags_ReadOnly);
         if(ImGui::Button("Extract Data from Image")){
