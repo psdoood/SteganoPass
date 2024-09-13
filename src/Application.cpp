@@ -23,9 +23,10 @@ namespace appUI
     static std::string currentPath = std::filesystem::current_path().string();
     static std::string lastLoadedPath;
     static std::vector<std::string> files;
-    bool noImageWarning = false;
-    bool noKeyWarning = false;
-    bool noDataWarning = false;
+    static bool noImageWarning = false;
+    static bool noKeyWarning = false;
+    static bool noDataWarning = false;
+    static Image loadedImg;
     
     //************************************************************************************************************//
 
@@ -171,7 +172,7 @@ namespace appUI
                 noDataWarning = true;
             } else{
                 cryptoObj.setKey(masterKey);
-                Image loadedImg = steganoObj.loadAndConvert(inImagePath);
+                loadedImg = steganoObj.loadAndConvert(inImagePath);
                 std::string dataStr = data;
                 std::vector<uint8_t> dataBits(dataStr.begin(), dataStr.end());
                 std::vector<uint8_t> encryptedData = cryptoObj.encryptData(dataBits);
@@ -217,10 +218,12 @@ namespace appUI
         if(ImGui::Button("Clear Input Image")){
             inImageTexture = 0;
             inImagePath = "Input Image Shown Here";
+            steganoObj.cleanImage(loadedImg);
         }
 
         if(ImGui::Button("Clear Control Data")){
             masterKey.clear();
+            memset(dataBuffer, 0, sizeof(dataBuffer));
             data.clear();
             extractedData.clear();
         }
