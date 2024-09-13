@@ -31,6 +31,7 @@ namespace appUI
     static bool noDataWarning = false;
     static bool saveAsWarning = false;
     static bool saveOverWarning = false;
+    static bool alteredImageNotSaved = false;
     
     //************************************************************************************************************//
 
@@ -125,9 +126,12 @@ namespace appUI
                             glDeleteTextures(1, &inImageTexture);
                             inImageTexture = 0;
                         }
-                            inImageTexture = loadTexture(inImagePath);
-                            loadedImgFilename = std::filesystem::path(inImagePath).filename().string();
+                        inImageTexture = loadTexture(inImagePath);
+                        loadedImgFilename = std::filesystem::path(inImagePath).filename().string();
                     }
+                }
+                if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone) && alteredImageNotSaved){
+                    ImGui::SetTooltip("Image hasn't been saved.");
                 }
             }
         }
@@ -190,12 +194,15 @@ namespace appUI
                 masterKey.clear();
                 memset(dataBuffer, 0, sizeof(dataBuffer));
                 data.clear();
+                alteredImageNotSaved = true;
             }
         }
         ImGui::InputTextWithHint("   ", "<Extracted Data>", &extractedData[0], extractedData.size(), ImGuiInputTextFlags_ReadOnly);
         if(ImGui::Button("Extract Data from Image")){
             if(inImagePath == "Input Image Shown Here"){
                 noImageWarning = true;
+            } else if(masterKey[0] == '\0'){
+                noKeyWarning = true;
             } else{
                 cryptoObj.setKey(masterKey);
                 std::vector<uint8_t> foundData = steganoObj.extractData(inImagePath);
@@ -225,6 +232,7 @@ namespace appUI
                 std::string fullSavePath = (std::filesystem::path(outImagePath) / loadedImgFilename).string();
                 steganoObj.saveImage(loadedImg, fullSavePath);
                 updateFiles();
+                alteredImageNotSaved = false;
             }
         }
         if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){
@@ -241,6 +249,7 @@ namespace appUI
             }else{
                 steganoObj.saveImage(loadedImg, inImagePath);
                 updateFiles();
+                alteredImageNotSaved = false;
             }
         }
         if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){
@@ -289,7 +298,7 @@ namespace appUI
             ImGui::OpenPopup("Warning: No Key Set");
         }
         if(ImGui::BeginPopupModal("Warning: No Key Set", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
-            ImGui::Text("Enter a key in the control window before hiding data.");
+            ImGui::Text("Enter a key in the control window before hiding/extracting data.");
             if(ImGui::Button("Close", ImVec2(120, 0))){
                 noKeyWarning = false;
                 ImGui::CloseCurrentPopup();
