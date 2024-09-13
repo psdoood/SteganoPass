@@ -29,7 +29,8 @@ namespace appUI
     static bool noImageWarning = false;
     static bool noKeyWarning = false;
     static bool noDataWarning = false;
-    static bool saveWarning = false;
+    static bool saveAsWarning = false;
+    static bool saveOverWarning = false;
     
     //************************************************************************************************************//
 
@@ -91,8 +92,9 @@ namespace appUI
         float bottomSectionHeight = windowHeight * 0.2f;
 
         //........................................................................................................//
+        //FILE EXPLORER WIDNOW SECTION............................................................................//
+        //........................................................................................................//
 
-        //File explorer window section
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
         ImGui::Begin("File Explorer", nullptr, window_flags);
@@ -100,7 +102,7 @@ namespace appUI
         if(ImGui::Button("Set as New Location to Save Image")){
             outImagePath = currentPath;
         }
-        ImGui::SameLine();
+        //ImGui::SameLine();
         ImGui::Text("Current Path: %s", currentPath.c_str());
         ImGui::Text("");
         if(ImGui::Button("<- Go Back")){
@@ -132,8 +134,9 @@ namespace appUI
         ImGui::End();
          
         //........................................................................................................//
+        //INPUT IMAGE WINDOW SECTION..............................................................................//
+        //........................................................................................................//
         
-        //Input image window section
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + halfWidth, main_viewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
         ImGui::Begin("Input Image", nullptr, window_flags);
@@ -156,8 +159,9 @@ namespace appUI
         ImGui::End();
 
         //........................................................................................................//
+        //CONTROL WINDOW SECTION..................................................................................//
+        //........................................................................................................//
 
-        //Control window section
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y + topSectionHeight));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, bottomSectionHeight));
         ImGui::Begin("Control", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
@@ -177,12 +181,15 @@ namespace appUI
             } else if(data[0] == '\0'){
                 noDataWarning = true;
             } else{
-                std::cout << "Master Key: " << masterKey << std::endl; //EMPTY FOR SOME REASON
                 cryptoObj.setKey(masterKey);
                 std::string dataStr = data;
                 std::vector<uint8_t> dataBits(dataStr.begin(), dataStr.end());
                 std::vector<uint8_t> encryptedData = cryptoObj.encryptData(dataBits);
                 steganoObj.hideData(loadedImg, encryptedData);
+                memset(masterKeyBuffer, 0, sizeof(masterKeyBuffer));
+                masterKey.clear();
+                memset(dataBuffer, 0, sizeof(dataBuffer));
+                data.clear();
             }
         }
         ImGui::InputTextWithHint("   ", "<Extracted Data>", &extractedData[0], extractedData.size(), ImGuiInputTextFlags_ReadOnly);
@@ -196,32 +203,48 @@ namespace appUI
                 std::string decryptedString(decryptedData.begin(), decryptedData.end());
                 
                 extractedData = decryptedString;
+                memset(masterKeyBuffer, 0, sizeof(masterKeyBuffer));
+                masterKey.clear();
+                memset(dataBuffer, 0, sizeof(dataBuffer));
+                data.clear();
             }
         }
         ImGui::End();
 
         //........................................................................................................//
+        //SETTINGS WINDOW SECTION.................................................................................//
+        //........................................................................................................//
 
-        //Save image window section
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + halfWidth, main_viewport->WorkPos.y + topSectionHeight));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, bottomSectionHeight));
         ImGui::Begin("Settings", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
 
         if(ImGui::Button("Save to new location")){
             if(outImagePath == "Select New Path in File Explorer" || loadedImgFilename.empty()){
-                saveWarning = true;
+                saveAsWarning = true;
             }else{
                 std::string fullSavePath = (std::filesystem::path(outImagePath) / loadedImgFilename).string();
                 steganoObj.saveImage(loadedImg, fullSavePath);
+                updateFiles();
+            }
+        }
+        if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){
+            if(outImagePath == "Select New Path in File Explorer"){
+                ImGui::SetTooltip("Choose a Path in the File Explorer.");
             }
         }
         ImGui::SameLine();
         ImGui::Text(outImagePath.c_str(), ImGuiInputTextFlags_ReadOnly);
 
         if(ImGui::Button("Save over original")){
-           //TODO: FIGURE THIS OUT
+            if(loadedImgFilename.empty()){
+                saveOverWarning = true;
+            }else{
+                steganoObj.saveImage(loadedImg, inImagePath);
+                updateFiles();
+            }
         }
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){
+        if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){
             ImGui::SetTooltip("Not Recommended.");
         }
 
@@ -230,6 +253,7 @@ namespace appUI
             inImagePath = "Input Image Shown Here";
             loadedImgFilename.clear();
             steganoObj.cleanImage(loadedImg);
+            extractedData.clear();
         }
 
         if(ImGui::Button("Clear Control Data")){
@@ -247,8 +271,9 @@ namespace appUI
         ImGui::End();
 
         //........................................................................................................//
+        //POP UP WINDOWS SECTION..................................................................................//
+        //........................................................................................................//
 
-        //Pop up window section
         if(noImageWarning){
             ImGui::OpenPopup("Warning: No Image Set");
         }
@@ -285,13 +310,25 @@ namespace appUI
             ImGui::EndPopup();
         }
 
-        if(saveWarning){
+        if(saveAsWarning){
             ImGui::OpenPopup("Warning: Failed to save image");
         }
-        if(ImGui::BeginPopupModal("Warning: Make sure you have selected a new location/image", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
+        if(ImGui::BeginPopupModal("Warning: Failed to save image", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
             ImGui::Text("Select a new location or image.");
             if(ImGui::Button("Close", ImVec2(120, 0))){
-                saveWarning = false;
+                saveAsWarning = false;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
+        if(saveOverWarning){
+            ImGui::OpenPopup("Warning: No Image Loaded");
+        }
+        if(ImGui::BeginPopupModal("Warning: No Image Loaded", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
+            ImGui::Text("Select a new image in the File Explorer.");
+            if(ImGui::Button("Close", ImVec2(120, 0))){
+                saveOverWarning = false;
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();

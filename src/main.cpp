@@ -42,7 +42,6 @@ int main(int, char**)
         //ImGui::ShowDemoWindow();
         appUI::renderUI();
 
-
         //Rendering
         ImGui::Render();
         int display_w, display_h;
