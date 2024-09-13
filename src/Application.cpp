@@ -16,9 +16,10 @@ namespace appUI
     static std::string inImagePath = "Input Image Shown Here";
     static std::string outImagePath = "Select New Path in File Explorer";
     static GLuint inImageTexture = 0;
-    static char masterKey[256];//adjust
-    static char data[1024];//adjust
-    static char extractedData[1024];//adjust
+    static std::string masterKey;
+    static char dataBuffer[1024] = "";//adjust
+    static std::string data;  
+    static std::string extractedData;
     static std::string currentPath = std::filesystem::current_path().string();
     static std::string lastLoadedPath;
     static std::vector<std::string> files;
@@ -37,7 +38,6 @@ namespace appUI
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
 
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, loadedImg.width, loadedImg.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, loadedImg.data);
@@ -158,13 +158,14 @@ namespace appUI
         ImGui::SetNextWindowSize(ImVec2(halfWidth, bottomSectionHeight));
         ImGui::Begin("Control", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
 
-        ImGui::InputTextWithHint(" ","<Master Key>", masterKey, AES_KEYLEN, ImGuiInputTextFlags_Password);
-        ImGui::InputTextWithHint("  ", "<Data to Hide>", data, IM_ARRAYSIZE(data)); //adjust buffer size at some point
+        ImGui::InputTextWithHint(" ","<Master Key>", &masterKey[0], AES_KEYLEN, ImGuiInputTextFlags_Password);
+        ImGui::InputTextWithHint("  ", "<Data>", dataBuffer, IM_ARRAYSIZE(dataBuffer));
+        data = dataBuffer;
 
         if(ImGui::Button("Hide Data in Image")){
             if(inImagePath == "Input Image Shown Here"){
                 noImageWarning = true;
-            } else if(masterKey[0] == '\0'){
+            } else if(masterKey.empty()){
                 noKeyWarning = true;
             } else if(data[0] == '\0'){
                 noDataWarning = true;
@@ -177,9 +178,19 @@ namespace appUI
                 steganoObj.hideData(loadedImg, encryptedData);
             }
         }
-        ImGui::InputTextWithHint("   ", "<Extracted Data>", extractedData, IM_ARRAYSIZE(extractedData), ImGuiInputTextFlags_ReadOnly);
+        ImGui::InputTextWithHint("   ", "<Extracted Data>", &extractedData[0], extractedData.size(), ImGuiInputTextFlags_ReadOnly);
         if(ImGui::Button("Extract Data from Image")){
-            
+            if(inImagePath == "Input Image Shown Here"){
+                noImageWarning = true;
+            } else{
+                cryptoObj.setKey(masterKey);
+                Image loadedImg = steganoObj.loadAndConvert(inImagePath);
+                std::vector<uint8_t> foundData = steganoObj.extractData(inImagePath);
+                std::vector<uint8_t> decryptedData = cryptoObj.decryptData(foundData);
+                std::string decryptedString(decryptedData.begin(), decryptedData.end());
+                
+                extractedData = decryptedString;
+            }
         }
         ImGui::End();
 
@@ -209,9 +220,9 @@ namespace appUI
         }
 
         if(ImGui::Button("Clear Control Data")){
-            memset(masterKey, 0, sizeof(masterKey));
-            memset(data, 0, sizeof(data));
-            memset(extractedData, 0, sizeof(extractedData));
+            masterKey.clear();
+            data.clear();
+            extractedData.clear();
         }
 
         if(ImGui::Button("Clear Save Location")){
@@ -227,14 +238,13 @@ namespace appUI
             ImGui::OpenPopup("Warning: No Image Set");
         }
         if(ImGui::BeginPopupModal("Warning: No Image Set", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
-            ImGui::Text("Choose an image in the file explorer before hiding data.");
+            ImGui::Text("Choose an image in the file explorer.");
             if(ImGui::Button("Close", ImVec2(120, 0))){
                 noImageWarning = false;
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
         }
-
 
         if(noKeyWarning){
             ImGui::OpenPopup("Warning: No Key Set");
