@@ -14,7 +14,7 @@ namespace appUI
     static Steganography steganoObj;
     static Crypto cryptoObj;
     static std::string inImagePath = "Input Image Shown Here";
-    static std::string outImagePath = "Select New Path";
+    static std::string outImagePath = "Select New Path in File Explorer";
     static GLuint inImageTexture = 0;
     static char masterKey[256];//adjust
     static char data[1024];//adjust
@@ -22,10 +22,9 @@ namespace appUI
     static std::string currentPath = std::filesystem::current_path().string();
     static std::string lastLoadedPath;
     static std::vector<std::string> files;
+    bool noImageWarning = false;
     bool noKeyWarning = false;
     bool noDataWarning = false;
-
-    
     
     //************************************************************************************************************//
 
@@ -163,20 +162,24 @@ namespace appUI
         ImGui::InputTextWithHint("  ", "<Data to Hide>", data, IM_ARRAYSIZE(data)); //adjust buffer size at some point
 
         if(ImGui::Button("Hide Data in Image")){
-            if(masterKey[0] == '\0'){
+            if(inImagePath == "Input Image Shown Here"){
+                noImageWarning = true;
+            } else if(masterKey[0] == '\0'){
                 noKeyWarning = true;
             } else if(data[0] == '\0'){
                 noDataWarning = true;
             } else{
-            Image loadedImg = steganoObj.loadAndConvert(inImagePath);
-            std::string dataStr = data;
-            std::vector<uint8_t> dataBits(dataStr.begin(), dataStr.end());
-            steganoObj.hideData(loadedImg, dataBits);
+                cryptoObj.setKey(masterKey);
+                Image loadedImg = steganoObj.loadAndConvert(inImagePath);
+                std::string dataStr = data;
+                std::vector<uint8_t> dataBits(dataStr.begin(), dataStr.end());
+                std::vector<uint8_t> encryptedData = cryptoObj.encryptData(dataBits);
+                steganoObj.hideData(loadedImg, encryptedData);
             }
         }
         ImGui::InputTextWithHint("   ", "<Extracted Data>", extractedData, IM_ARRAYSIZE(extractedData), ImGuiInputTextFlags_ReadOnly);
         if(ImGui::Button("Extract Data from Image")){
-            //call steg/crypto functions 
+            
         }
         ImGui::End();
 
@@ -212,7 +215,7 @@ namespace appUI
         }
 
         if(ImGui::Button("Clear Save Location")){
-            outImagePath = "Select New Path";
+            outImagePath = "Select New Path in File Explorer";
         }
 
         ImGui::End();
@@ -220,6 +223,19 @@ namespace appUI
         //........................................................................................................//
 
         //Pop up window section
+        if(noImageWarning){
+            ImGui::OpenPopup("Warning: No Image Set");
+        }
+        if(ImGui::BeginPopupModal("Warning: No Image Set", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
+            ImGui::Text("Choose an image in the file explorer before hiding data.");
+            if(ImGui::Button("Close", ImVec2(120, 0))){
+                noImageWarning = false;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
+
         if(noKeyWarning){
             ImGui::OpenPopup("Warning: No Key Set");
         }
