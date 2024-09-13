@@ -201,7 +201,6 @@ namespace appUI
                 std::vector<uint8_t> foundData = steganoObj.extractData(inImagePath);
                 std::vector<uint8_t> decryptedData = cryptoObj.decryptData(foundData);
                 std::string decryptedString(decryptedData.begin(), decryptedData.end());
-                
                 extractedData = decryptedString;
                 memset(masterKeyBuffer, 0, sizeof(masterKeyBuffer));
                 masterKey.clear();
@@ -333,7 +332,6 @@ namespace appUI
             }
             ImGui::EndPopup();
         }
-
 
         ImGui::End();
     }

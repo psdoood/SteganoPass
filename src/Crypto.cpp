@@ -4,6 +4,7 @@
 
 //Must be called first
 void Crypto::setKey(const std::string& inKey){
+    reset();
     if(inKey.size() == 0){
         std::cerr << "MUST PROVIDE INPUT KEY" << std::endl;
         m_keyIsSet = false;
