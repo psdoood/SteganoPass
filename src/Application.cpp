@@ -123,7 +123,7 @@ namespace appUI
                             inImageTexture = 0;
                         }
                             inImageTexture = loadTexture(inImagePath);
-                            loadedImgFilename = std::filesystem::path(inImagePath).filename();
+                            loadedImgFilename = std::filesystem::path(inImagePath).filename().string();
                     }
                 }
             }
