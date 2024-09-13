@@ -16,6 +16,7 @@ namespace appUI
     static std::string inImagePath = "Input Image Shown Here";
     static std::string outImagePath = "Select New Path in File Explorer";
     static GLuint inImageTexture = 0;
+    static char masterKeyBuffer[AES_KEYLEN] = "";
     static std::string masterKey;
     static char dataBuffer[1024] = "";//adjust
     static std::string data;  
@@ -161,9 +162,12 @@ namespace appUI
         ImGui::SetNextWindowSize(ImVec2(halfWidth, bottomSectionHeight));
         ImGui::Begin("Control", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
 
-        ImGui::InputTextWithHint(" ","<Master Key>", &masterKey[0], AES_KEYLEN, ImGuiInputTextFlags_Password);
-        ImGui::InputTextWithHint("  ", "<Data>", dataBuffer, IM_ARRAYSIZE(dataBuffer));
-        data = dataBuffer;
+        if(ImGui::InputTextWithHint(" ","<Master Key>", masterKeyBuffer, IM_ARRAYSIZE(masterKeyBuffer), ImGuiInputTextFlags_Password)){
+            masterKey = std::string(masterKeyBuffer);
+        }
+        if(ImGui::InputTextWithHint("  ", "<Data>", dataBuffer, IM_ARRAYSIZE(dataBuffer))){
+            data = std::string(dataBuffer);
+        }
 
         if(ImGui::Button("Hide Data in Image")){
             if(inImagePath == "Input Image Shown Here"){
@@ -173,7 +177,7 @@ namespace appUI
             } else if(data[0] == '\0'){
                 noDataWarning = true;
             } else{
-                std::cout << masterKey << std::endl; //EMPTY FOR SOME REASON
+                std::cout << "Master Key: " << masterKey << std::endl; //EMPTY FOR SOME REASON
                 cryptoObj.setKey(masterKey);
                 std::string dataStr = data;
                 std::vector<uint8_t> dataBits(dataStr.begin(), dataStr.end());
@@ -229,6 +233,7 @@ namespace appUI
         }
 
         if(ImGui::Button("Clear Control Data")){
+            memset(masterKeyBuffer, 0, sizeof(masterKeyBuffer));
             masterKey.clear();
             memset(dataBuffer, 0, sizeof(dataBuffer));
             data.clear();
@@ -281,9 +286,9 @@ namespace appUI
         }
 
         if(saveWarning){
-            ImGui::OpenPopup("Warning: Failed to save image, make sure you have selected a new location");
+            ImGui::OpenPopup("Warning: Failed to save image");
         }
-        if(ImGui::BeginPopupModal("Warning: Failed to save image, make sure you have selected a new location", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
+        if(ImGui::BeginPopupModal("Warning: Make sure you have selected a new location/image", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
             ImGui::Text("Select a new location or image.");
             if(ImGui::Button("Close", ImVec2(120, 0))){
                 saveWarning = false;
