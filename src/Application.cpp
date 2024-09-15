@@ -9,50 +9,29 @@
 #include "Crypto.h"
 #include "Steganography.h"
 
-namespace appUI
-{
-    static Steganography steganoObj;
-    static Crypto cryptoObj;
-    static std::string inImagePath = "Input Image Shown Here";
-    static std::string outImagePath = "Select New Path in File Explorer";
-    static GLuint inImageTexture = 0;
-    static char masterKeyBuffer[AES_KEYLEN] = "";
-    static std::string masterKey;
-    static char dataBuffer[1024] = "";//adjust
-    static std::string data;  
-    static std::string extractedData;
-    static std::string currentPath = std::filesystem::current_path().string();
-    static std::string lastLoadedPath;
-    static Image loadedImg;
-    static std::string loadedImgFilename;
-    static std::vector<std::string> files;
-    static bool noImageWarning = false;
-    static bool noKeyWarning = false;
-    static bool noDataWarning = false;
-    static bool saveAsWarning = false;
-    static bool saveOverWarning = false;
-    static bool alteredImageNotSaved = false;
-    
-    //************************************************************************************************************//
+struct AppState{
+    Steganography steganoObj;
+    Crypto cryptoObj;
+    std::string inImagePath = "Input Image Shown Here";
+    std::string outImagePath = "Select New Path in File Explorer";
+    GLuint inImageTexture = 0;
+    char masterKeyBuffer[AES_KEYLEN] = "";
+    std::string masterKey;
+    char dataBuffer[1024] = "";
+    std::string data;  
+    std::string extractedData;
+    std::string currentPath = std::filesystem::current_path().string();
+    std::string lastLoadedPath;
+    Image loadedImg;
+    std::string loadedImgFilename;
+    std::vector<std::string> files;
 
-    GLuint loadTexture(const std::string path){
-        Image loadedImg = steganoObj.loadAndConvert(path);
-
-        GLuint image_texture;
-        glGenTextures(1, &image_texture);
-        glBindTexture(GL_TEXTURE_2D, image_texture);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, loadedImg.width, loadedImg.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, loadedImg.data);
-
-        steganoObj.cleanImage(loadedImg);
-        return image_texture;
-    }
-
-    //************************************************************************************************************//
+    bool noImageWarning = false;
+    bool noKeyWarning = false;
+    bool noDataWarning = false;
+    bool saveAsWarning = false;
+    bool saveOverWarning = false;
+    bool alteredImageNotSaved = false;
 
     void updateFiles(){
         files.clear();
@@ -69,6 +48,29 @@ namespace appUI
     bool isImageFile(const std::string& extension){
         std::vector<std::string> extensions = {".jpeg", ".jpg", ".bmp", ".png", ".tga", ".psd"};
         return std::find(extensions.begin(), extensions.end(), extension) != extensions.end();
+    }
+
+};
+
+namespace appUI
+{
+    static AppState appState; 
+
+    GLuint loadTexture(const std::string path){
+        Image loadedImg = appState.steganoObj.loadAndConvert(path);
+
+        GLuint image_texture;
+        glGenTextures(1, &image_texture);
+        glBindTexture(GL_TEXTURE_2D, image_texture);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, loadedImg.width, loadedImg.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, loadedImg.data);
+
+        appState.steganoObj.cleanImage(loadedImg);
+        return image_texture;
     }
 
     //************************************************************************************************************//
@@ -101,36 +103,36 @@ namespace appUI
         ImGui::Begin("File Explorer", nullptr, window_flags);
             
         if(ImGui::Button("Set as New Location to Save Image")){
-            outImagePath = currentPath;
+            appState.outImagePath = appState.currentPath;
         }
         //ImGui::SameLine();
-        ImGui::Text("Current Path: %s", currentPath.c_str());
+        ImGui::Text("Current Path: %s", appState.currentPath.c_str());
         ImGui::Text("");
         if(ImGui::Button("<- Go Back")){
-            currentPath = std::filesystem::path(currentPath).parent_path().string();
-            updateFiles();
+            appState.currentPath = std::filesystem::path(appState.currentPath).parent_path().string();
+            appState.updateFiles();
         }
-        if(files.empty()){
+        if(appState.files.empty()){
             ImGui::Text("No images/folders in this directory");
         }else{
-            for(const auto& file : files){
+            for(const auto& file : appState.files){
                 if(ImGui::Selectable(file.c_str())){
-                    std::string fullPath = (std::filesystem::path(currentPath) / file).string();
+                    std::string fullPath = (std::filesystem::path(appState.currentPath) / file).string();
                     bool isDirectory = std::filesystem::is_directory(fullPath);
                     if(isDirectory){
-                        currentPath = fullPath;
-                        updateFiles();
+                        appState.currentPath = fullPath;
+                        appState.updateFiles();
                     }else{
-                        inImagePath = fullPath;
-                        if(inImageTexture != 0){
-                            glDeleteTextures(1, &inImageTexture);
-                            inImageTexture = 0;
+                        appState.inImagePath = fullPath;
+                        if(appState.inImageTexture != 0){
+                            glDeleteTextures(1, &appState.inImageTexture);
+                            appState.inImageTexture = 0;
                         }
-                        inImageTexture = loadTexture(inImagePath);
-                        loadedImgFilename = std::filesystem::path(inImagePath).filename().string();
+                        appState.inImageTexture = loadTexture(appState.inImagePath);
+                        appState.loadedImgFilename = std::filesystem::path(appState.inImagePath).filename().string();
                     }
                 }
-                if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone) && alteredImageNotSaved){
+                if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone) && appState.alteredImageNotSaved){
                     ImGui::SetTooltip("Image hasn't been saved.");
                 }
             }
@@ -145,20 +147,20 @@ namespace appUI
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
         ImGui::Begin("Input Image", nullptr, window_flags);
 
-        if(inImageTexture == 0){
-            ImGui::Button(inImagePath.c_str(), ImVec2(halfWidth - 20, topSectionHeight - 40));
+        if(appState.inImageTexture == 0){
+            ImGui::Button(appState.inImagePath.c_str(), ImVec2(halfWidth - 20, topSectionHeight - 40));
         } else{
             float aspectRatio = 0.0f;
             ImVec2 imageSize(halfWidth - 20, halfWidth - 40);
-            if(inImagePath != lastLoadedPath){
-                loadedImg = steganoObj.loadAndConvert(inImagePath);
-                aspectRatio = (float)loadedImg.width / loadedImg.height;
+            if(appState.inImagePath != appState.lastLoadedPath){
+                appState.loadedImg = appState.steganoObj.loadAndConvert(appState.inImagePath);
+                aspectRatio = (float)appState.loadedImg.width / appState.loadedImg.height;
                 imageSize.x = std::min(imageSize.x, imageSize.y * aspectRatio);
                 imageSize.y = halfWidth / aspectRatio;
-                lastLoadedPath = inImagePath;
+                appState.lastLoadedPath = appState.inImagePath;
             }
             ImGui::SetCursorPos(ImVec2((halfWidth - imageSize.x) * 0.5f, (topSectionHeight - imageSize.y) * 0.5f));
-            ImGui::Image((void*)(intptr_t)inImageTexture, imageSize);
+            ImGui::Image((void*)(intptr_t)appState.inImageTexture, imageSize);
         }
         ImGui::End();
 
@@ -170,49 +172,49 @@ namespace appUI
         ImGui::SetNextWindowSize(ImVec2(halfWidth, bottomSectionHeight));
         ImGui::Begin("Control", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
 
-        if(ImGui::InputTextWithHint(" ","<Master Key>", masterKeyBuffer, IM_ARRAYSIZE(masterKeyBuffer), ImGuiInputTextFlags_Password)){
-            masterKey = std::string(masterKeyBuffer);
+        if(ImGui::InputTextWithHint(" ","<Master Key>", appState.masterKeyBuffer, IM_ARRAYSIZE(appState.masterKeyBuffer), ImGuiInputTextFlags_Password)){
+            appState.masterKey = std::string(appState.masterKeyBuffer);
         }
-        if(ImGui::InputTextWithHint("  ", "<Data>", dataBuffer, IM_ARRAYSIZE(dataBuffer))){
-            data = std::string(dataBuffer);
+        if(ImGui::InputTextWithHint("  ", "<Data>", appState.dataBuffer, IM_ARRAYSIZE(appState.dataBuffer))){
+            appState.data = std::string(appState.dataBuffer);
         }
 
         if(ImGui::Button("Hide Data in Image")){
-            if(inImagePath == "Input Image Shown Here"){
-                noImageWarning = true;
-            } else if(masterKey[0] == '\0'){
-                noKeyWarning = true;
-            } else if(data[0] == '\0'){
-                noDataWarning = true;
+            if(appState.inImagePath == "Input Image Shown Here"){
+                appState.noImageWarning = true;
+            } else if(appState.masterKey[0] == '\0'){
+                appState.noKeyWarning = true;
+            } else if(appState.data[0] == '\0'){
+                appState.noDataWarning = true;
             } else{
-                cryptoObj.setKey(masterKey);
-                std::string dataStr = data;
+                appState.cryptoObj.setKey(appState.masterKey);
+                std::string dataStr = appState.data;
                 std::vector<uint8_t> dataBits(dataStr.begin(), dataStr.end());
-                std::vector<uint8_t> encryptedData = cryptoObj.encryptData(dataBits);
-                steganoObj.hideData(loadedImg, encryptedData);
-                memset(masterKeyBuffer, 0, sizeof(masterKeyBuffer));
-                masterKey.clear();
-                memset(dataBuffer, 0, sizeof(dataBuffer));
-                data.clear();
-                alteredImageNotSaved = true;
+                std::vector<uint8_t> encryptedData = appState.cryptoObj.encryptData(dataBits);
+                appState.steganoObj.hideData(appState.loadedImg, encryptedData);
+                memset(appState.masterKeyBuffer, 0, sizeof(appState.masterKeyBuffer));
+                appState.masterKey.clear();
+                memset(appState.dataBuffer, 0, sizeof(appState.dataBuffer));
+                appState.data.clear();
+                appState.alteredImageNotSaved = true;
             }
         }
-        ImGui::InputTextWithHint("   ", "<Extracted Data>", &extractedData[0], extractedData.size(), ImGuiInputTextFlags_ReadOnly);
+        ImGui::InputTextWithHint("   ", "<Extracted Data>", &appState.extractedData[0], appState.extractedData.size(), ImGuiInputTextFlags_ReadOnly);
         if(ImGui::Button("Extract Data from Image")){
-            if(inImagePath == "Input Image Shown Here"){
-                noImageWarning = true;
-            } else if(masterKey[0] == '\0'){
-                noKeyWarning = true;
+            if(appState.inImagePath == "Input Image Shown Here"){
+                appState.noImageWarning = true;
+            } else if(appState.masterKey[0] == '\0'){
+                appState.noKeyWarning = true;
             } else{
-                cryptoObj.setKey(masterKey);
-                std::vector<uint8_t> foundData = steganoObj.extractData(inImagePath);
-                std::vector<uint8_t> decryptedData = cryptoObj.decryptData(foundData);
+                appState.cryptoObj.setKey(appState.masterKey);
+                std::vector<uint8_t> foundData = appState.steganoObj.extractData(appState.inImagePath);
+                std::vector<uint8_t> decryptedData = appState.cryptoObj.decryptData(foundData);
                 std::string decryptedString(decryptedData.begin(), decryptedData.end());
-                extractedData = decryptedString;
-                memset(masterKeyBuffer, 0, sizeof(masterKeyBuffer));
-                masterKey.clear();
-                memset(dataBuffer, 0, sizeof(dataBuffer));
-                data.clear();
+                appState.extractedData = decryptedString;
+                memset(appState.masterKeyBuffer, 0, sizeof(appState.masterKeyBuffer));
+                appState.masterKey.clear();
+                memset(appState.dataBuffer, 0, sizeof(appState.dataBuffer));
+                appState.data.clear();
             }
         }
         ImGui::End();
@@ -226,30 +228,30 @@ namespace appUI
         ImGui::Begin("Settings", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
 
         if(ImGui::Button("Save to new location")){
-            if(outImagePath == "Select New Path in File Explorer" || loadedImgFilename.empty()){
-                saveAsWarning = true;
+            if(appState.outImagePath == "Select New Path in File Explorer" || appState.loadedImgFilename.empty()){
+                appState.saveAsWarning = true;
             }else{
-                std::string fullSavePath = (std::filesystem::path(outImagePath) / loadedImgFilename).string();
-                steganoObj.saveImage(loadedImg, fullSavePath);
-                updateFiles();
-                alteredImageNotSaved = false;
+                std::string fullSavePath = (std::filesystem::path(appState.outImagePath) / appState.loadedImgFilename).string();
+                appState.steganoObj.saveImage(appState.loadedImg, fullSavePath);
+                appState.updateFiles();
+                appState.alteredImageNotSaved = false;
             }
         }
         if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){
-            if(outImagePath == "Select New Path in File Explorer"){
+            if(appState.outImagePath == "Select New Path in File Explorer"){
                 ImGui::SetTooltip("Choose a Path in the File Explorer.");
             }
         }
         ImGui::SameLine();
-        ImGui::Text(outImagePath.c_str(), ImGuiInputTextFlags_ReadOnly);
+        ImGui::Text(appState.outImagePath.c_str(), ImGuiInputTextFlags_ReadOnly);
 
         if(ImGui::Button("Save over original")){
-            if(loadedImgFilename.empty()){
-                saveOverWarning = true;
+            if(appState.loadedImgFilename.empty()){
+                appState.saveOverWarning = true;
             }else{
-                steganoObj.saveImage(loadedImg, inImagePath);
-                updateFiles();
-                alteredImageNotSaved = false;
+                appState.steganoObj.saveImage(appState.loadedImg, appState.inImagePath);
+                appState.updateFiles();
+                appState.alteredImageNotSaved = false;
             }
         }
         if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){
@@ -257,23 +259,23 @@ namespace appUI
         }
 
         if(ImGui::Button("Clear Input Image")){
-            inImageTexture = 0;
-            inImagePath = "Input Image Shown Here";
-            loadedImgFilename.clear();
-            steganoObj.cleanImage(loadedImg);
-            extractedData.clear();
+            appState.inImageTexture = 0;
+            appState.inImagePath = "Input Image Shown Here";
+            appState.loadedImgFilename.clear();
+            appState.steganoObj.cleanImage(appState.loadedImg);
+            appState.extractedData.clear();
         }
 
         if(ImGui::Button("Clear Control Data")){
-            memset(masterKeyBuffer, 0, sizeof(masterKeyBuffer));
-            masterKey.clear();
-            memset(dataBuffer, 0, sizeof(dataBuffer));
-            data.clear();
-            extractedData.clear();
+            memset(appState.masterKeyBuffer, 0, sizeof(appState.masterKeyBuffer));
+            appState.masterKey.clear();
+            memset(appState.dataBuffer, 0, sizeof(appState.dataBuffer));
+            appState.data.clear();
+            appState.extractedData.clear();
         }
 
         if(ImGui::Button("Clear Save Location")){
-            outImagePath = "Select New Path in File Explorer";
+            appState.outImagePath = "Select New Path in File Explorer";
         }
 
         ImGui::End();
@@ -282,61 +284,61 @@ namespace appUI
         //POP UP WINDOWS SECTION..................................................................................//
         //........................................................................................................//
 
-        if(noImageWarning){
+        if(appState.noImageWarning){
             ImGui::OpenPopup("Warning: No Image Set");
         }
         if(ImGui::BeginPopupModal("Warning: No Image Set", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
             ImGui::Text("Choose an image in the file explorer.");
             if(ImGui::Button("Close", ImVec2(120, 0))){
-                noImageWarning = false;
+                appState.noImageWarning = false;
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
         }
 
-        if(noKeyWarning){
+        if(appState.noKeyWarning){
             ImGui::OpenPopup("Warning: No Key Set");
         }
         if(ImGui::BeginPopupModal("Warning: No Key Set", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
             ImGui::Text("Enter a key in the control window before hiding/extracting data.");
             if(ImGui::Button("Close", ImVec2(120, 0))){
-                noKeyWarning = false;
+                appState.noKeyWarning = false;
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
         }
 
-        if(noDataWarning){
+        if(appState.noDataWarning){
             ImGui::OpenPopup("Warning: No Data Entered");
         }
         if(ImGui::BeginPopupModal("Warning: No Data Entered", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
             ImGui::Text("Enter data in the control window before hiding data.");
             if(ImGui::Button("Close", ImVec2(120, 0))){
-                noDataWarning = false;
+                appState.noDataWarning = false;
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
         }
 
-        if(saveAsWarning){
+        if(appState.saveAsWarning){
             ImGui::OpenPopup("Warning: Failed to save image");
         }
         if(ImGui::BeginPopupModal("Warning: Failed to save image", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
             ImGui::Text("Select a new location or image.");
             if(ImGui::Button("Close", ImVec2(120, 0))){
-                saveAsWarning = false;
+                appState.saveAsWarning = false;
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
         }
 
-        if(saveOverWarning){
+        if(appState.saveOverWarning){
             ImGui::OpenPopup("Warning: No Image Loaded");
         }
         if(ImGui::BeginPopupModal("Warning: No Image Loaded", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)){
             ImGui::Text("Select a new image in the File Explorer.");
             if(ImGui::Button("Close", ImVec2(120, 0))){
-                saveOverWarning = false;
+                appState.saveOverWarning = false;
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
