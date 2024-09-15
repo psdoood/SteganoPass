@@ -1,79 +1,8 @@
 #include "Application.h"
-#include "imgui.h"
-#include <string>
-#include <vector>
-#include <filesystem>
-#include <algorithm>
-#include <iostream>
-
-#include "Crypto.h"
-#include "Steganography.h"
-
-struct AppState{
-    Steganography steganoObj;
-    Crypto cryptoObj;
-    std::string inImagePath = "Input Image Shown Here";
-    std::string outImagePath = "Select New Path in File Explorer";
-    GLuint inImageTexture = 0;
-    char masterKeyBuffer[AES_KEYLEN] = "";
-    std::string masterKey;
-    char dataBuffer[1024] = "";
-    std::string data;  
-    std::string extractedData;
-    std::string currentPath = std::filesystem::current_path().string();
-    std::string lastLoadedPath;
-    Image loadedImg;
-    std::string loadedImgFilename;
-    std::vector<std::string> files;
-
-    bool noImageWarning = false;
-    bool noKeyWarning = false;
-    bool noDataWarning = false;
-    bool saveAsWarning = false;
-    bool saveOverWarning = false;
-    bool alteredImageNotSaved = false;
-
-    void updateFiles(){
-        files.clear();
-        for(const auto& item : std::filesystem::directory_iterator(currentPath)){
-            if(item.is_directory() || isImageFile(item.path().extension().string())) {
-            files.push_back(item.path().filename().string());
-            }
-        }
-        std::sort(files.begin(), files.end());
-    }   
-
-    //************************************************************************************************************//
-
-    bool isImageFile(const std::string& extension){
-        std::vector<std::string> extensions = {".jpeg", ".jpg", ".bmp", ".png", ".tga", ".psd"};
-        return std::find(extensions.begin(), extensions.end(), extension) != extensions.end();
-    }
-
-};
 
 namespace appUI
 {
     static AppState appState; 
-
-    GLuint loadTexture(const std::string path){
-        Image loadedImg = appState.steganoObj.loadAndConvert(path);
-
-        GLuint image_texture;
-        glGenTextures(1, &image_texture);
-        glBindTexture(GL_TEXTURE_2D, image_texture);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, loadedImg.width, loadedImg.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, loadedImg.data);
-
-        appState.steganoObj.cleanImage(loadedImg);
-        return image_texture;
-    }
-
-    //************************************************************************************************************//
 
     void renderUI(){
         ImGuiWindowFlags window_flags = 0;
@@ -91,17 +20,24 @@ namespace appUI
         float windowWidth = ImGui::GetWindowWidth();
         float windowHeight = ImGui::GetWindowHeight();
         float halfWidth = windowWidth * 0.5f; 
-        float topSectionHeight = windowHeight * 0.8f;
-        float bottomSectionHeight = windowHeight * 0.2f;
+        float topSectionHeight = windowHeight * TOP_SECTION_HEIGHT_RATIO;
+        float bottomSectionHeight = windowHeight * BOTTOM_SECTION_HEIGHT_RATIO;
 
-        //........................................................................................................//
-        //FILE EXPLORER WIDNOW SECTION............................................................................//
-        //........................................................................................................//
+        renderFileExplorer(main_viewport, window_flags, halfWidth, topSectionHeight);
+        renderInputImageWindow(main_viewport, window_flags, halfWidth, topSectionHeight);
+        renderControlWindow(main_viewport, window_flags, halfWidth, topSectionHeight);
+        renderSettingsWindow(main_viewport, window_flags, halfWidth, topSectionHeight);
+        renderPopUps();
+        
+        ImGui::End();
+    }
 
+    //************************************************************************************************************//
+
+    void renderFileExplorer(const ImGuiViewport* main_viewport, const ImGuiWindowFlags& window_flags, const float& halfWidth, const float& topSectionHeight){
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
         ImGui::Begin("File Explorer", nullptr, window_flags);
-            
         if(ImGui::Button("Set as New Location to Save Image")){
             appState.outImagePath = appState.currentPath;
         }
@@ -138,11 +74,11 @@ namespace appUI
             }
         }
         ImGui::End();
-         
-        //........................................................................................................//
-        //INPUT IMAGE WINDOW SECTION..............................................................................//
-        //........................................................................................................//
-        
+    }
+
+    //************************************************************************************************************//
+
+    void renderInputImageWindow(const ImGuiViewport* main_viewport, const ImGuiWindowFlags& window_flags, const float& halfWidth, const float& topSectionHeight){
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + halfWidth, main_viewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
         ImGui::Begin("Input Image", nullptr, window_flags);
@@ -163,13 +99,13 @@ namespace appUI
             ImGui::Image((void*)(intptr_t)appState.inImageTexture, imageSize);
         }
         ImGui::End();
+    }
 
-        //........................................................................................................//
-        //CONTROL WINDOW SECTION..................................................................................//
-        //........................................................................................................//
+    //************************************************************************************************************//
 
+    void renderControlWindow(const ImGuiViewport* main_viewport, const ImGuiWindowFlags& window_flags, const float& halfWidth, const float& topSectionHeight){
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y + topSectionHeight));
-        ImGui::SetNextWindowSize(ImVec2(halfWidth, bottomSectionHeight));
+        ImGui::SetNextWindowSize(ImVec2(halfWidth, 1.0 - topSectionHeight));
         ImGui::Begin("Control", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
 
         if(ImGui::InputTextWithHint(" ","<Master Key>", appState.masterKeyBuffer, IM_ARRAYSIZE(appState.masterKeyBuffer), ImGuiInputTextFlags_Password)){
@@ -218,13 +154,13 @@ namespace appUI
             }
         }
         ImGui::End();
+    }
 
-        //........................................................................................................//
-        //SETTINGS WINDOW SECTION.................................................................................//
-        //........................................................................................................//
+    //************************************************************************************************************//
 
+    void renderSettingsWindow(const ImGuiViewport* main_viewport, const ImGuiWindowFlags& window_flags, const float& halfWidth, const float& topSectionHeight){
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + halfWidth, main_viewport->WorkPos.y + topSectionHeight));
-        ImGui::SetNextWindowSize(ImVec2(halfWidth, bottomSectionHeight));
+        ImGui::SetNextWindowSize(ImVec2(halfWidth, 1.0 - topSectionHeight));
         ImGui::Begin("Settings", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
 
         if(ImGui::Button("Save to new location")){
@@ -279,11 +215,11 @@ namespace appUI
         }
 
         ImGui::End();
+    }
 
-        //........................................................................................................//
-        //POP UP WINDOWS SECTION..................................................................................//
-        //........................................................................................................//
+    //************************************************************************************************************//
 
+    void renderPopUps(){
         if(appState.noImageWarning){
             ImGui::OpenPopup("Warning: No Image Set");
         }
@@ -343,7 +279,24 @@ namespace appUI
             }
             ImGui::EndPopup();
         }
+    }
 
-        ImGui::End();
+    //************************************************************************************************************//
+
+    GLuint loadTexture(const std::string& path){
+        Image loadedImg = appState.steganoObj.loadAndConvert(path);
+
+        GLuint image_texture;
+        glGenTextures(1, &image_texture);
+        glBindTexture(GL_TEXTURE_2D, image_texture);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, loadedImg.width, loadedImg.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, loadedImg.data);
+
+        appState.steganoObj.cleanImage(loadedImg);
+        return image_texture;
     }
 }
