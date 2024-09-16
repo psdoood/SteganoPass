@@ -90,18 +90,28 @@ TEST_F(CryptoTest, MultipleEncryptionsWithSameKey){
 
 TEST_F(CryptoTest, KeyChange){
     crypto.setKey("FirstKey123456");
+    std::cout << "1\n";
     std::string originalData = "TestData";
+    std::cout << "2\n";
     std::vector<uint8_t> data(originalData.begin(), originalData.end());
+    std::cout << "3\n";
 
     std::vector<uint8_t> encryptedData = crypto.encryptData(data);
+    std::cout << "4\n";
 
     crypto.setKey("SecondKey78901");
+    std::cout << "5\n";
     std::vector<uint8_t> decryptedData = crypto.decryptData(encryptedData);
+    std::cout << "6\n";
     EXPECT_TRUE(decryptedData.empty());
+    std::cout << "7\n";
 
     crypto.setKey("FirstKey123456");
+    std::cout << "8\n";
     decryptedData = crypto.decryptData(encryptedData);
+    std::cout << "9\n";
     EXPECT_EQ(originalData, std::string(decryptedData.begin(), decryptedData.end()));
+    std::cout << "10\n";
 }
 
 TEST_F(CryptoTest, SpecialCharacters){

@@ -41,10 +41,8 @@ std::vector<uint8_t> Steganography::extractData(const Image& img){
         bool sizeBit = img.data[i] & 1;  
         dataSize |= (sizeBit << i);
     }
-
     std::vector<uint8_t> result(dataSize, 0);
     size_t dataIndex = 0; size_t bitIndex = 0;
-
     for(size_t i = 8; i < (dataSize * 8) + 8; i++){
         bool dataBit = img.data[i] & 1;
         result[dataIndex] |= (dataBit << (7 - bitIndex));;

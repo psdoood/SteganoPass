@@ -63,7 +63,13 @@ std::vector<uint8_t> Crypto::decryptData(const std::vector<uint8_t>& data){
     std::vector<uint8_t> decryptedData(data.begin() + AES_BLOCKLEN, data.end());
     AES_CBC_decrypt_buffer(&m_ctx, decryptedData.data(), decryptedData.size());
 
-    return unpad(decryptedData);
+    std::vector<uint8_t> unpaddedData = unpad(decryptedData);
+    if(!isDecryptionValid(unpaddedData)){
+        return std::vector<uint8_t>();
+    }
+
+    reset();
+    return unpaddedData;
 }
 
 //************************************************************************************************************//
@@ -159,4 +165,13 @@ void Crypto::reset(){
 
 bool Crypto::isKeySet(){
     return m_keyIsSet;
+}
+
+//************************************************************************************************************//
+
+bool Crypto::isDecryptionValid(const std::vector<uint8_t>& decryptedData){
+    if(decryptedData.empty()){
+        return false;
+    }
+    return true;
 }

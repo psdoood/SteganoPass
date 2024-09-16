@@ -68,7 +68,8 @@ namespace appUI
                             glDeleteTextures(1, &appState.inImageTexture);
                             appState.inImageTexture = 0;
                         }
-                        appState.inImageTexture = loadTexture(appState.inImagePath);
+                        appState.inImageTexture = loadTexture(appState.inImagePath); 
+                        appState.loadedImg = appState.steganoObj.loadAndConvert(appState.inImagePath);
                         appState.loadedImgFilename = std::filesystem::path(appState.inImagePath).filename().string();
                     }
                 }
@@ -95,6 +96,8 @@ namespace appUI
             float aspectRatio = 0.0f;
             ImVec2 imageSize(halfWidth - 20, halfWidth - 40);
             if(appState.inImagePath != appState.lastLoadedPath){
+                //should clean here, only if image is diff
+                appState.cleanInputImage();
                 appState.loadedImg = appState.steganoObj.loadAndConvert(appState.inImagePath);
                 aspectRatio = (float)appState.loadedImg.width / appState.loadedImg.height;
                 imageSize.x = std::min(imageSize.x, imageSize.y * aspectRatio);
@@ -174,7 +177,7 @@ namespace appUI
                 appState.steganoObj.saveImage(appState.loadedImg, fullSavePath);
                 appState.updateFiles();
                 appState.alteredImageNotSaved = false;
-                appState.cleanInputImage();
+                appState.inImageTexture = 0;
             }
         }
         if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){
@@ -192,7 +195,7 @@ namespace appUI
                 appState.steganoObj.saveImage(appState.loadedImg, appState.inImagePath);
                 appState.updateFiles();
                 appState.alteredImageNotSaved = false;
-                appState.cleanInputImage();
+                appState.inImageTexture = 0;
             }
         }
         if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){
