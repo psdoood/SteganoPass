@@ -22,9 +22,8 @@ TEST_F(SteganographyTest, HideAndExtract){
 
     Image img = steg.loadAndConvert(testImgPath);
     steg.hideData(img, data);
-    steg.saveImage(img, outImgPath);
 
-    std::string extractedData = steg.convertToStr(steg.extractData(outImgPath));
+    std::string extractedData = steg.convertToStr(steg.extractData(img));
     
     EXPECT_EQ(originalData, extractedData);
 }

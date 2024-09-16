@@ -147,7 +147,7 @@ namespace appUI
                 appState.noKeyWarning = true;
             } else{
                 appState.cryptoObj.setKey(appState.masterKey);
-                std::vector<uint8_t> foundData = appState.steganoObj.extractData(appState.inImagePath);
+                std::vector<uint8_t> foundData = appState.steganoObj.extractData(appState.loadedImg);
                 std::vector<uint8_t> decryptedData = appState.cryptoObj.decryptData(foundData);
                 std::string decryptedString(decryptedData.begin(), decryptedData.end());
                 appState.extractedData = decryptedString;
@@ -174,6 +174,7 @@ namespace appUI
                 appState.steganoObj.saveImage(appState.loadedImg, fullSavePath);
                 appState.updateFiles();
                 appState.alteredImageNotSaved = false;
+                appState.cleanInputImage();
             }
         }
         if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){
@@ -191,6 +192,7 @@ namespace appUI
                 appState.steganoObj.saveImage(appState.loadedImg, appState.inImagePath);
                 appState.updateFiles();
                 appState.alteredImageNotSaved = false;
+                appState.cleanInputImage();
             }
         }
         if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){

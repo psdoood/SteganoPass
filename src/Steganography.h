@@ -25,7 +25,7 @@ class Steganography {
         bool hideData(Image& img, const std::vector<uint8_t>& data);
 
         //Extracts hidden data from an input image 
-        std::vector<uint8_t> extractData(const std::string& inPath);
+        std::vector<uint8_t> extractData(const Image& img);
 
         //Checks if a given data size will fit in image
         bool canHideData(const Image& img, size_t dataSize);

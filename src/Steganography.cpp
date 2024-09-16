@@ -34,8 +34,7 @@ bool Steganography::hideData(Image& img, const std::vector<uint8_t>& data){
 
 //************************************************************************************************************//
      
-std::vector<uint8_t> Steganography::extractData(const std::string& inPath){
-    Image img = loadAndConvert(inPath);
+std::vector<uint8_t> Steganography::extractData(const Image& img){
     //Determine the size of data, which is stored in the first byte
     uint8_t dataSize = 0;
     for(size_t i = 0; i < 8; i++){
@@ -57,7 +56,6 @@ std::vector<uint8_t> Steganography::extractData(const std::string& inPath){
         }
     }
 
-    cleanImage(img);
     return result;
 }
 
