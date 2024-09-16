@@ -6,15 +6,15 @@ namespace appUI
 
     //Main function for control of the GUI 
     void renderUI(){
-        ImGuiWindowFlags window_flags = 0;
-        window_flags |= ImGuiWindowFlags_NoCollapse;
-        window_flags |= ImGuiWindowFlags_NoResize;
-        window_flags |= ImGuiWindowFlags_NoMove;
+        ImGuiWindowFlags windowFlags = 0;
+        windowFlags |= ImGuiWindowFlags_NoCollapse;
+        windowFlags |= ImGuiWindowFlags_NoResize;
+        windowFlags |= ImGuiWindowFlags_NoMove;
 
         //Cause the UI to be fullscreen in relation to the glfw window
-        const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y), ImGuiCond_Always);
-        ImGui::SetNextWindowSize(ImVec2(main_viewport->WorkSize.x, main_viewport->WorkSize.y), ImGuiCond_Always);
+        const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x, mainViewport->WorkPos.y), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(mainViewport->WorkSize.x, mainViewport->WorkSize.y), ImGuiCond_Always);
         ImGui::Begin("SteganoPass", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
         //Get width of the window for button and text placement 
@@ -25,10 +25,10 @@ namespace appUI
         float bottomSectionHeight = windowHeight * BOTTOM_SECTION_HEIGHT_RATIO;
 
         //Main function calls for all GUI elements
-        renderFileExplorer(main_viewport, window_flags, halfWidth, topSectionHeight);
-        renderInputImageWindow(main_viewport, window_flags, halfWidth, topSectionHeight);
-        renderControlWindow(main_viewport, window_flags, halfWidth, topSectionHeight);
-        renderSettingsWindow(main_viewport, window_flags, halfWidth, topSectionHeight);
+        renderFileExplorer(mainViewport, windowFlags, halfWidth, topSectionHeight);
+        renderInputImageWindow(mainViewport, windowFlags, halfWidth, topSectionHeight);
+        renderControlWindow(mainViewport, windowFlags, halfWidth, topSectionHeight);
+        renderSettingsWindow(mainViewport, windowFlags, halfWidth, topSectionHeight);
         renderPopUps();
         
         ImGui::End();
@@ -38,10 +38,10 @@ namespace appUI
     //Location: Upper Left Window
     //Creates a simple file explorer window that lists the current directory, including only image files and other directories.
     //Provides basic functionality navigating through to other locations, and displays the current path at the top.
-    void renderFileExplorer(const ImGuiViewport* main_viewport, const ImGuiWindowFlags& window_flags, const float& halfWidth, const float& topSectionHeight){
-        ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y));
+    void renderFileExplorer(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight){
+        ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x, mainViewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
-        ImGui::Begin("File Explorer", nullptr, window_flags);
+        ImGui::Begin("File Explorer", nullptr, windowFlags);
         if(ImGui::Button("Set as New Location to Save Image")){
             appState.outImagePath = appState.currentPath;
         }
@@ -83,10 +83,11 @@ namespace appUI
     //************************************************************************************************************//
     //Location: Upper Right Window
     //Creates a window that simply displays the texture created from the input image from the file explorer.
-    void renderInputImageWindow(const ImGuiViewport* main_viewport, const ImGuiWindowFlags& window_flags, const float& halfWidth, const float& topSectionHeight){
-        ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + halfWidth, main_viewport->WorkPos.y));
+    //Also is where the Image data is received from loadAndConvert().
+    void renderInputImageWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight){
+        ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x + halfWidth, mainViewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
-        ImGui::Begin("Input Image", nullptr, window_flags);
+        ImGui::Begin("Input Image", nullptr, windowFlags);
 
         if(appState.inImageTexture == 0){
             ImGui::Button(appState.inImagePath.c_str(), ImVec2(halfWidth - 20, topSectionHeight - 40));
@@ -109,15 +110,15 @@ namespace appUI
     //************************************************************************************************************//
     //Location: Lower Left Window
     //Craetes a window for the input of master key, data, and the output of extracted data from images.
-    void renderControlWindow(const ImGuiViewport* main_viewport, const ImGuiWindowFlags& window_flags, const float& halfWidth, const float& topSectionHeight){
-        ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y + topSectionHeight));
+    void renderControlWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight){
+        ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x, mainViewport->WorkPos.y + topSectionHeight));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, 1.0 - topSectionHeight));
-        ImGui::Begin("Control", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
+        ImGui::Begin("Control", nullptr, windowFlags | ImGuiWindowFlags_NoScrollbar);
 
-        if(ImGui::InputTextWithHint(" ","<Master Key>", appState.masterKeyBuffer, IM_ARRAYSIZE(appState.masterKeyBuffer), ImGuiInputTextFlags_Password)){
+        if(ImGui::InputTextWithHint("MasterKey","<Enter Master Key for encryption/decryption of Password>", appState.masterKeyBuffer, IM_ARRAYSIZE(appState.masterKeyBuffer), ImGuiInputTextFlags_Password)){
             appState.masterKey = std::string(appState.masterKeyBuffer);
         }
-        if(ImGui::InputTextWithHint("  ", "<Data>", appState.dataBuffer, IM_ARRAYSIZE(appState.dataBuffer))){
+        if(ImGui::InputTextWithHint("Password ", "<Enter Password to be hidden in Image>", appState.dataBuffer, IM_ARRAYSIZE(appState.dataBuffer))){
             appState.data = std::string(appState.dataBuffer);
         }
 
@@ -160,10 +161,10 @@ namespace appUI
     //Location: Lower Right Window
     //Creates a window that allows the saving of images over the original or to a new location, and also clearing
     //field data from the control window or input image window.
-    void renderSettingsWindow(const ImGuiViewport* main_viewport, const ImGuiWindowFlags& window_flags, const float& halfWidth, const float& topSectionHeight){
-        ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + halfWidth, main_viewport->WorkPos.y + topSectionHeight));
+    void renderSettingsWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight){
+        ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x + halfWidth, mainViewport->WorkPos.y + topSectionHeight));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, 1.0 - topSectionHeight));
-        ImGui::Begin("Settings", nullptr, window_flags | ImGuiWindowFlags_NoScrollbar);
+        ImGui::Begin("Settings", nullptr, windowFlags | ImGuiWindowFlags_NoScrollbar);
 
         if(ImGui::Button("Save to new location")){
             if(appState.outImagePath == "Select New Path in File Explorer" || appState.loadedImgFilename.empty()){
@@ -280,7 +281,7 @@ namespace appUI
     //************************************************************************************************************//
     //Loads a texture from image file stored at path, for use in input image window only.
     GLuint loadTexture(const std::string& path){
-        Image loadedImg = appState.steganoObj.loadAndConvert(path);
+        Image loadedImgTex = appState.steganoObj.loadAndConvert(path);
 
         GLuint image_texture;
         glGenTextures(1, &image_texture);
@@ -290,9 +291,9 @@ namespace appUI
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, loadedImg.width, loadedImg.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, loadedImg.data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, loadedImgTex.width, loadedImgTex.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, loadedImgTex.data);
 
-        appState.steganoObj.cleanImage(loadedImg);
+        appState.steganoObj.cleanImage(loadedImgTex);
         return image_texture;
     }
 }
