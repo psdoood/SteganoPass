@@ -4,6 +4,7 @@ namespace appUI
 {
     static AppState appState; 
 
+    //Main function for control of the GUI 
     void renderUI(){
         ImGuiWindowFlags window_flags = 0;
         window_flags |= ImGuiWindowFlags_NoCollapse;
@@ -23,6 +24,7 @@ namespace appUI
         float topSectionHeight = windowHeight * TOP_SECTION_HEIGHT_RATIO;
         float bottomSectionHeight = windowHeight * BOTTOM_SECTION_HEIGHT_RATIO;
 
+        //Main function calls for all GUI elements
         renderFileExplorer(main_viewport, window_flags, halfWidth, topSectionHeight);
         renderInputImageWindow(main_viewport, window_flags, halfWidth, topSectionHeight);
         renderControlWindow(main_viewport, window_flags, halfWidth, topSectionHeight);
@@ -33,7 +35,9 @@ namespace appUI
     }
 
     //************************************************************************************************************//
-
+    //Location: Upper Left Window
+    //Creates a simple file explorer window that lists the current directory, including only image files and other directories.
+    //Provides basic functionality navigating through to other locations, and displays the current path at the top.
     void renderFileExplorer(const ImGuiViewport* main_viewport, const ImGuiWindowFlags& window_flags, const float& halfWidth, const float& topSectionHeight){
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
@@ -41,7 +45,7 @@ namespace appUI
         if(ImGui::Button("Set as New Location to Save Image")){
             appState.outImagePath = appState.currentPath;
         }
-        //ImGui::SameLine();
+        
         ImGui::Text("Current Path: %s", appState.currentPath.c_str());
         ImGui::Text("");
         if(ImGui::Button("<- Go Back")){
@@ -77,7 +81,8 @@ namespace appUI
     }
 
     //************************************************************************************************************//
-
+    //Location: Upper Right Window
+    //Creates a window that simply displays the texture created from the input image from the file explorer.
     void renderInputImageWindow(const ImGuiViewport* main_viewport, const ImGuiWindowFlags& window_flags, const float& halfWidth, const float& topSectionHeight){
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + halfWidth, main_viewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
@@ -102,7 +107,8 @@ namespace appUI
     }
 
     //************************************************************************************************************//
-
+    //Location: Lower Left Window
+    //Craetes a window for the input of master key, data, and the output of extracted data from images.
     void renderControlWindow(const ImGuiViewport* main_viewport, const ImGuiWindowFlags& window_flags, const float& halfWidth, const float& topSectionHeight){
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x, main_viewport->WorkPos.y + topSectionHeight));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, 1.0 - topSectionHeight));
@@ -128,10 +134,7 @@ namespace appUI
                 std::vector<uint8_t> dataBits(dataStr.begin(), dataStr.end());
                 std::vector<uint8_t> encryptedData = appState.cryptoObj.encryptData(dataBits);
                 appState.steganoObj.hideData(appState.loadedImg, encryptedData);
-                memset(appState.masterKeyBuffer, 0, sizeof(appState.masterKeyBuffer));
-                appState.masterKey.clear();
-                memset(appState.dataBuffer, 0, sizeof(appState.dataBuffer));
-                appState.data.clear();
+                appState.cleanKeyAndData();
                 appState.alteredImageNotSaved = true;
             }
         }
@@ -147,17 +150,16 @@ namespace appUI
                 std::vector<uint8_t> decryptedData = appState.cryptoObj.decryptData(foundData);
                 std::string decryptedString(decryptedData.begin(), decryptedData.end());
                 appState.extractedData = decryptedString;
-                memset(appState.masterKeyBuffer, 0, sizeof(appState.masterKeyBuffer));
-                appState.masterKey.clear();
-                memset(appState.dataBuffer, 0, sizeof(appState.dataBuffer));
-                appState.data.clear();
+                appState.cleanKeyAndData();
             }
         }
         ImGui::End();
     }
 
     //************************************************************************************************************//
-
+    //Location: Lower Right Window
+    //Creates a window that allows the saving of images over the original or to a new location, and also clearing
+    //field data from the control window or input image window.
     void renderSettingsWindow(const ImGuiViewport* main_viewport, const ImGuiWindowFlags& window_flags, const float& halfWidth, const float& topSectionHeight){
         ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + halfWidth, main_viewport->WorkPos.y + topSectionHeight));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, 1.0 - topSectionHeight));
@@ -195,18 +197,12 @@ namespace appUI
         }
 
         if(ImGui::Button("Clear Input Image")){
-            appState.inImageTexture = 0;
-            appState.inImagePath = "Input Image Shown Here";
-            appState.loadedImgFilename.clear();
-            appState.steganoObj.cleanImage(appState.loadedImg);
+            appState.cleanInputImage();
             appState.extractedData.clear();
         }
 
         if(ImGui::Button("Clear Control Data")){
-            memset(appState.masterKeyBuffer, 0, sizeof(appState.masterKeyBuffer));
-            appState.masterKey.clear();
-            memset(appState.dataBuffer, 0, sizeof(appState.dataBuffer));
-            appState.data.clear();
+            appState.cleanKeyAndData();
             appState.extractedData.clear();
         }
 
@@ -218,7 +214,7 @@ namespace appUI
     }
 
     //************************************************************************************************************//
-
+    //Creates popups for any of the flags in AppState if set to true.
     void renderPopUps(){
         if(appState.noImageWarning){
             ImGui::OpenPopup("Warning: No Image Set");
@@ -282,7 +278,7 @@ namespace appUI
     }
 
     //************************************************************************************************************//
-
+    //Loads a texture from image file stored at path, for use in input image window only.
     GLuint loadTexture(const std::string& path){
         Image loadedImg = appState.steganoObj.loadAndConvert(path);
 
