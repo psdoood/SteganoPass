@@ -16,6 +16,7 @@ namespace appUI
         ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x, mainViewport->WorkPos.y), ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(mainViewport->WorkSize.x, mainViewport->WorkSize.y), ImGuiCond_Always);
         ImGui::Begin("SteganoPass", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBringToFrontOnFocus);
+        appState.updateFiles();
 
         //Get width of the window for button and text placement 
         float windowWidth = ImGui::GetWindowWidth();
@@ -42,12 +43,8 @@ namespace appUI
         ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x, mainViewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
         ImGui::Begin("File Explorer", nullptr, windowFlags);
-        if(ImGui::Button("Set as New Location to Save Image")){
-            appState.outImagePath = appState.currentPath;
-        }
         
         ImGui::Text("Current Path: %s", appState.currentPath.c_str());
-        ImGui::Text("");
         if(ImGui::Button("<- Go Back")){
             appState.currentPath = std::filesystem::path(appState.currentPath).parent_path().string();
             appState.updateFiles();
@@ -110,7 +107,7 @@ namespace appUI
     //Craetes a window for the input of master key, data, and the output of extracted data from images.
     void renderControlWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight){
         ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x, mainViewport->WorkPos.y + topSectionHeight));
-        ImGui::SetNextWindowSize(ImVec2(halfWidth, 1.0 - topSectionHeight));
+        ImGui::SetNextWindowSize(ImVec2(halfWidth, mainViewport->WorkSize.y - topSectionHeight));
         ImGui::Begin("Control", nullptr, windowFlags | ImGuiWindowFlags_NoScrollbar);
 
         if(ImGui::InputTextWithHint("MasterKey","<Enter Master Key for encryption/decryption of Password>", appState.masterKeyBuffer, IM_ARRAYSIZE(appState.masterKeyBuffer), ImGuiInputTextFlags_Password)){
@@ -161,27 +158,22 @@ namespace appUI
     //field data from the control window or input image window.
     void renderSettingsWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight){
         ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x + halfWidth, mainViewport->WorkPos.y + topSectionHeight));
-        ImGui::SetNextWindowSize(ImVec2(halfWidth, 1.0 - topSectionHeight));
+        ImGui::SetNextWindowSize(ImVec2(halfWidth, mainViewport->WorkSize.y - topSectionHeight));
         ImGui::Begin("Settings", nullptr, windowFlags | ImGuiWindowFlags_NoScrollbar);
 
-        if(ImGui::Button("Save to new location")){
-            if(appState.outImagePath == "Select New Path in File Explorer" || appState.loadedImgFilename.empty()){
+        if(ImGui::Button("Save to Location in File Explorer")){
+            if(appState.loadedImgFilename.empty()){
                 appState.saveAsWarning = true;
             }else{
-                std::string fullSavePath = (std::filesystem::path(appState.outImagePath) / appState.loadedImgFilename).string();
+                std::string fullSavePath = (std::filesystem::path(appState.currentPath) / appState.loadedImgFilename).string();
                 appState.steganoObj.saveImage(appState.loadedImg, fullSavePath);
                 appState.updateFiles();
                 appState.alteredImageNotSaved = false;
                 appState.cleanInputImage();
             }
         }
-        if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){
-            if(appState.outImagePath == "Select New Path in File Explorer"){
-                ImGui::SetTooltip("Choose a Path in the File Explorer.");
-            }
-        }
         ImGui::SameLine();
-        ImGui::Text(appState.outImagePath.c_str(), ImGuiInputTextFlags_ReadOnly);
+        ImGui::Text(appState.currentPath.c_str(), ImGuiInputTextFlags_ReadOnly);
 
         if(ImGui::Button("Save over original")){
             if(appState.loadedImgFilename.empty()){
@@ -196,7 +188,8 @@ namespace appUI
         if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){
             ImGui::SetTooltip("Not Recommended.");
         }
-
+        ImGui::NewLine();
+        
         if(ImGui::Button("Clear Input Image")){
             appState.cleanInputImage();
             appState.extractedData.clear();
@@ -205,10 +198,6 @@ namespace appUI
         if(ImGui::Button("Clear Control Data")){
             appState.cleanKeyAndData();
             appState.extractedData.clear();
-        }
-
-        if(ImGui::Button("Clear Save Location")){
-            appState.outImagePath = "Select New Path in File Explorer";
         }
 
         ImGui::End();

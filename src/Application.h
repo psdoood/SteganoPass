@@ -24,7 +24,6 @@ struct AppState{
     Steganography steganoObj;
     Crypto cryptoObj;
     std::string inImagePath = "Input Image Shown Here";
-    std::string outImagePath = "Select New Path in File Explorer";
     GLuint inImageTexture = 0;
     char masterKeyBuffer[AES_KEYLEN] = "";
     std::string masterKey;
