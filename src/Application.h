@@ -70,6 +70,7 @@ struct AppState{
         data.clear();
     }
 
+    //Cleans the loaded Image and related variables for use in loading new image.
     void cleanInputImage(){
         steganoObj.cleanImage(loadedImg);
         if(inImageTexture != 0){
@@ -82,6 +83,7 @@ struct AppState{
     }
 };
 
+//Functions for GUI rendering, more specific descriptions in Application.cpp
 namespace appUI{
     void renderUI();
     GLuint loadTexture(const std::string& path);

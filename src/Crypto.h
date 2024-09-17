@@ -49,6 +49,7 @@ class Crypto {
         //Resets obj for next use
         void reset();
 
+        //Checks if deecrypted data is non empty 
         bool isDecryptionValid(const std::vector<uint8_t>& decryptedData);
 };
 

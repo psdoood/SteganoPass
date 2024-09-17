@@ -55,6 +55,7 @@ namespace appUI
             for(const auto& file : appState.files){
                 if(ImGui::Selectable(file.c_str())){
                     std::string fullPath = (std::filesystem::path(appState.currentPath) / file).string();
+                    //If selected file is a directory, make it the current path and update the file explorer.
                     bool isDirectory = std::filesystem::is_directory(fullPath);
                     if(isDirectory){
                         appState.currentPath = fullPath;
@@ -65,6 +66,7 @@ namespace appUI
                             glDeleteTextures(1, &appState.inImageTexture);
                             appState.inImageTexture = 0;
                         }
+                        //Image is loaded here to loadedImg in the loadTexture function 
                         appState.inImageTexture = loadTexture(appState.inImagePath);
                         appState.loadedImgFilename = std::filesystem::path(appState.inImagePath).filename().string();
                     }
@@ -84,7 +86,8 @@ namespace appUI
         ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x + halfWidth, mainViewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
         ImGui::Begin("Input Image", nullptr, windowFlags);
-
+        
+        //Show a button in place of image if no image has been loaded 
         if(appState.inImageTexture == 0){
             ImGui::Button(appState.inImagePath.c_str(), ImVec2(halfWidth - 20, topSectionHeight - 40));
         } else{
@@ -270,6 +273,7 @@ namespace appUI
     //************************************************************************************************************//
     //Loads a texture from image file stored at path, also where image data is loaded into loadedImg
     GLuint loadTexture(const std::string& path){
+        //Clear previous laodedImg data before loading new Image
         appState.steganoObj.cleanImage(appState.loadedImg);
         appState.loadedImg = appState.steganoObj.loadAndConvert(path); 
 
