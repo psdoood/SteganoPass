@@ -72,12 +72,15 @@ struct AppState{
     }
 
     void cleanInputImage(){
-        inImageTexture = 0;
+        steganoObj.cleanImage(loadedImg);
+        if(inImageTexture != 0){
+            glDeleteTextures(1, &inImageTexture);
+            inImageTexture = 0;
+        }
         inImagePath = "Input Image Shown Here";
         loadedImgFilename.clear();
-        steganoObj.cleanImage(loadedImg);
+        lastLoadedPath.clear();
     }
-
 };
 
 namespace appUI{

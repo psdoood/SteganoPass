@@ -68,8 +68,7 @@ namespace appUI
                             glDeleteTextures(1, &appState.inImageTexture);
                             appState.inImageTexture = 0;
                         }
-                        appState.inImageTexture = loadTexture(appState.inImagePath); 
-                        appState.loadedImg = appState.steganoObj.loadAndConvert(appState.inImagePath);
+                        appState.inImageTexture = loadTexture(appState.inImagePath);
                         appState.loadedImgFilename = std::filesystem::path(appState.inImagePath).filename().string();
                     }
                 }
@@ -84,7 +83,6 @@ namespace appUI
     //************************************************************************************************************//
     //Location: Upper Right Window
     //Creates a window that simply displays the texture created from the input image from the file explorer.
-    //Also is where the Image data is received from loadAndConvert().
     void renderInputImageWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight){
         ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x + halfWidth, mainViewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
@@ -96,9 +94,6 @@ namespace appUI
             float aspectRatio = 0.0f;
             ImVec2 imageSize(halfWidth - 20, halfWidth - 40);
             if(appState.inImagePath != appState.lastLoadedPath){
-                //should clean here, only if image is diff
-                appState.cleanInputImage();
-                appState.loadedImg = appState.steganoObj.loadAndConvert(appState.inImagePath);
                 aspectRatio = (float)appState.loadedImg.width / appState.loadedImg.height;
                 imageSize.x = std::min(imageSize.x, imageSize.y * aspectRatio);
                 imageSize.y = halfWidth / aspectRatio;
@@ -126,7 +121,7 @@ namespace appUI
         }
 
         if(ImGui::Button("Hide Data in Image")){
-            if(appState.inImagePath == "Input Image Shown Here"){
+            if(appState.inImagePath == "Input Image Shown Here" || appState.loadedImg.data == nullptr || appState.loadedImg.width == 0 || appState.loadedImg.height == 0){
                 appState.noImageWarning = true;
             } else if(appState.masterKey[0] == '\0'){
                 appState.noKeyWarning = true;
@@ -177,7 +172,7 @@ namespace appUI
                 appState.steganoObj.saveImage(appState.loadedImg, fullSavePath);
                 appState.updateFiles();
                 appState.alteredImageNotSaved = false;
-                appState.inImageTexture = 0;
+                appState.cleanInputImage();
             }
         }
         if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){
@@ -195,7 +190,7 @@ namespace appUI
                 appState.steganoObj.saveImage(appState.loadedImg, appState.inImagePath);
                 appState.updateFiles();
                 appState.alteredImageNotSaved = false;
-                appState.inImageTexture = 0;
+                appState.cleanInputImage();
             }
         }
         if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNone)){
@@ -284,9 +279,10 @@ namespace appUI
     }
 
     //************************************************************************************************************//
-    //Loads a texture from image file stored at path, for use in input image window only.
+    //Loads a texture from image file stored at path, also where image data is loaded into loadedImg
     GLuint loadTexture(const std::string& path){
-        Image loadedImgTex = appState.steganoObj.loadAndConvert(path);
+        appState.steganoObj.cleanImage(appState.loadedImg);
+        appState.loadedImg = appState.steganoObj.loadAndConvert(path); 
 
         GLuint image_texture;
         glGenTextures(1, &image_texture);
@@ -296,9 +292,8 @@ namespace appUI
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, loadedImgTex.width, loadedImgTex.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, loadedImgTex.data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, appState.loadedImg.width, appState.loadedImg.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, appState.loadedImg.data);
 
-        appState.steganoObj.cleanImage(loadedImgTex);
         return image_texture;
     }
 }
