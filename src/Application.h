@@ -24,14 +24,14 @@ struct AppState{
     Steganography steganoObj;
     Crypto cryptoObj;
     std::string inImagePath = "Input Image Shown Here";
-    GLuint inImageTexture = 0;
-    char masterKeyBuffer[AES_KEYLEN] = "";
-    std::string masterKey;
-    char dataBuffer[MAX_DATA_BUFFER_SIZE] = "";
-    std::string data;  
-    std::string extractedData;
     std::string currentPath = std::filesystem::current_path().string();
     std::string lastLoadedPath;
+    GLuint inImageTexture = 0;
+    char masterKeyBuffer[AES_KEYLEN] = "";
+    char dataBuffer[MAX_DATA_BUFFER_SIZE] = "";
+    std::string masterKey;
+    std::string data;  
+    std::string extractedData;
     Image loadedImg;
     std::string loadedImgFilename;
     std::vector<std::string> files;
@@ -68,7 +68,6 @@ struct AppState{
         masterKey.clear();
         memset(dataBuffer, 0, sizeof(dataBuffer));
         data.clear();
-        extractedData.clear();
     }
 
     //Cleans the loaded Image and related variables for use in loading new image.
@@ -87,12 +86,12 @@ struct AppState{
 //Functions for GUI rendering, more specific descriptions in Application.cpp
 namespace appUI{
     void renderUI();
-    GLuint loadTexture(const std::string& path);
-    void renderFileExplorer(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight);
-    void renderInputImageWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight);
-    void renderControlWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight);
-    void renderSettingsWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight);
-    void renderPopUps();
+    void renderFileExplorer(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight, AppState& appState);
+    void renderInputImageWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight, AppState& appState);
+    void renderControlWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight, AppState& appState);
+    void renderSettingsWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight, AppState& appState);
+    void renderPopUps(AppState& appState);
+    GLuint loadTexture(const std::string& path, AppState& appState);
 }
 
 #endif

@@ -35,6 +35,11 @@ TEST_F(CryptoTest, WrongKeyDecryption){
     crypto.setKey("WrongKey123456");
     std::vector<uint8_t> decryptedData = crypto.decryptData(encryptedData);
     EXPECT_TRUE(decryptedData.empty());
+
+    crypto.setKey("TestMasterKey123");
+    decryptedData = crypto.decryptData(encryptedData);
+    ASSERT_FALSE(decryptedData.empty());
+    EXPECT_EQ(originalData, std::string(decryptedData.begin(), decryptedData.end()));
 }
 
 TEST_F(CryptoTest, EmptyData){

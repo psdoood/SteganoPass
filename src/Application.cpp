@@ -2,10 +2,11 @@
 
 namespace appUI
 {
-    static AppState appState; 
+    AppState appState;
 
     //Main function for control of the GUI 
-    void renderUI(){
+    void renderUI(){ 
+
         ImGuiWindowFlags windowFlags = 0;
         windowFlags |= ImGuiWindowFlags_NoCollapse;
         windowFlags |= ImGuiWindowFlags_NoResize;
@@ -26,11 +27,11 @@ namespace appUI
         float bottomSectionHeight = windowHeight * BOTTOM_SECTION_HEIGHT_RATIO;
 
         //Main function calls for all GUI elements
-        renderFileExplorer(mainViewport, windowFlags, halfWidth, topSectionHeight);
-        renderInputImageWindow(mainViewport, windowFlags, halfWidth, topSectionHeight);
-        renderControlWindow(mainViewport, windowFlags, halfWidth, topSectionHeight);
-        renderSettingsWindow(mainViewport, windowFlags, halfWidth, topSectionHeight);
-        renderPopUps();
+        renderFileExplorer(mainViewport, windowFlags, halfWidth, topSectionHeight, appState);
+        renderInputImageWindow(mainViewport, windowFlags, halfWidth, topSectionHeight, appState);
+        renderControlWindow(mainViewport, windowFlags, halfWidth, topSectionHeight, appState);
+        renderSettingsWindow(mainViewport, windowFlags, halfWidth, topSectionHeight, appState);
+        renderPopUps(appState);
         
         ImGui::End();
     }
@@ -39,7 +40,7 @@ namespace appUI
     //Location: Upper Left Window
     //Creates a simple file explorer window that lists the current directory, including only image files and other directories.
     //Provides basic functionality navigating through to other locations, and displays the current path at the top.
-    void renderFileExplorer(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight){
+    void renderFileExplorer(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight, AppState& appState){
         ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x, mainViewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
         ImGui::Begin("File Explorer", nullptr, windowFlags);
@@ -53,21 +54,23 @@ namespace appUI
             ImGui::Text("No images/folders in this directory");
         }else{
             for(const auto& file : appState.files){
+                std::string fullPath = (std::filesystem::path(appState.currentPath) / file).string();
+                bool isDirectory = std::filesystem::is_directory(fullPath);
                 if(ImGui::Selectable(file.c_str())){
-                    std::string fullPath = (std::filesystem::path(appState.currentPath) / file).string();
                     //If selected file is a directory, make it the current path and update the file explorer.
-                    bool isDirectory = std::filesystem::is_directory(fullPath);
+                    
                     if(isDirectory){
                         appState.currentPath = fullPath;
                         appState.updateFiles();
                     }else{
+                        //Selected path is image, remove previous image texure if needed.
                         appState.inImagePath = fullPath;
                         if(appState.inImageTexture != 0){
                             glDeleteTextures(1, &appState.inImageTexture);
                             appState.inImageTexture = 0;
                         }
-                        //Image is loaded here to loadedImg in the loadTexture function 
-                        appState.inImageTexture = loadTexture(appState.inImagePath);
+                        //Image is loaded here to loadedImg in the loadTexture function.
+                        appState.inImageTexture = loadTexture(appState.inImagePath, appState);
                         appState.loadedImgFilename = std::filesystem::path(appState.inImagePath).filename().string();
                     }
                 }
@@ -82,7 +85,7 @@ namespace appUI
     //************************************************************************************************************//
     //Location: Upper Right Window
     //Creates a window that simply displays the texture created from the input image from the file explorer.
-    void renderInputImageWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight){
+    void renderInputImageWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight, AppState& appState){
         ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x + halfWidth, mainViewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, topSectionHeight));
         ImGui::Begin("Input Image", nullptr, windowFlags);
@@ -93,6 +96,7 @@ namespace appUI
         } else{
             float aspectRatio = 0.0f;
             ImVec2 imageSize(halfWidth - 20, halfWidth - 40);
+            //Recalculate apsect ratio and image size only when a new image is loaded, prevent recalculation each frame.
             if(appState.inImagePath != appState.lastLoadedPath){
                 aspectRatio = (float)appState.loadedImg.width / appState.loadedImg.height;
                 imageSize.x = std::min(imageSize.x, imageSize.y * aspectRatio);
@@ -108,12 +112,12 @@ namespace appUI
     //************************************************************************************************************//
     //Location: Lower Left Window
     //Craetes a window for the input of master key, data, and the output of extracted data from images.
-    void renderControlWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight){
+    void renderControlWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight, AppState& appState){
         ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x, mainViewport->WorkPos.y + topSectionHeight));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, mainViewport->WorkSize.y - topSectionHeight));
         ImGui::Begin("Control", nullptr, windowFlags | ImGuiWindowFlags_NoScrollbar);
-
-        if(ImGui::InputTextWithHint("MasterKey","<Enter Master Key for encryption/decryption of Password>", appState.masterKeyBuffer, IM_ARRAYSIZE(appState.masterKeyBuffer), ImGuiInputTextFlags_Password)){
+        
+        if(ImGui::InputTextWithHint("Master Key","<Enter Master Key for encryption/decryption of Password>", appState.masterKeyBuffer, IM_ARRAYSIZE(appState.masterKeyBuffer), ImGuiInputTextFlags_Password)){
             appState.masterKey = std::string(appState.masterKeyBuffer);
         }
         if(ImGui::InputTextWithHint("Password ", "<Enter Password to be hidden in Image>", appState.dataBuffer, IM_ARRAYSIZE(appState.dataBuffer))){
@@ -128,6 +132,7 @@ namespace appUI
             } else if(appState.data[0] == '\0'){
                 appState.noDataWarning = true;
             } else{
+                //Begin procedure for hiding data: Set Key, convert and ecrypt data in a uint8_t vector, then hide said data in loadedImg with cleanup.
                 appState.cryptoObj.setKey(appState.masterKey);
                 std::string dataStr = appState.data;
                 std::vector<uint8_t> dataBits(dataStr.begin(), dataStr.end());
@@ -144,6 +149,7 @@ namespace appUI
             } else if(appState.masterKey[0] == '\0'){
                 appState.noKeyWarning = true;
             } else{
+                //Begin procedure for extracting data: Set Key, extract and decrypt from loadedImg into uint8_t vector, then convert to string.
                 appState.cryptoObj.setKey(appState.masterKey);
                 std::vector<uint8_t> foundData = appState.steganoObj.extractData(appState.loadedImg);
                 std::vector<uint8_t> decryptedData = appState.cryptoObj.decryptData(foundData);
@@ -159,7 +165,7 @@ namespace appUI
     //Location: Lower Right Window
     //Creates a window that allows the saving of images over the original or to a new location, and also clearing
     //field data from the control window or input image window.
-    void renderSettingsWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight){
+    void renderSettingsWindow(const ImGuiViewport* mainViewport, const ImGuiWindowFlags& windowFlags, const float& halfWidth, const float& topSectionHeight, AppState& appState){
         ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x + halfWidth, mainViewport->WorkPos.y + topSectionHeight));
         ImGui::SetNextWindowSize(ImVec2(halfWidth, mainViewport->WorkSize.y - topSectionHeight));
         ImGui::Begin("Settings", nullptr, windowFlags | ImGuiWindowFlags_NoScrollbar);
@@ -168,9 +174,10 @@ namespace appUI
             if(appState.loadedImgFilename.empty()){
                 appState.saveAsWarning = true;
             }else{
+                //Get the currentPath and append the loadedImgFilename to the end.
                 std::string fullSavePath = (std::filesystem::path(appState.currentPath) / appState.loadedImgFilename).string();
                 appState.steganoObj.saveImage(appState.loadedImg, fullSavePath);
-                appState.updateFiles();
+                appState.updateFiles(); //Render saved file in the File Explorer.
                 appState.alteredImageNotSaved = false;
                 appState.cleanInputImage();
             }
@@ -182,6 +189,7 @@ namespace appUI
             if(appState.loadedImgFilename.empty()){
                 appState.saveOverWarning = true;
             }else{
+                //Uses the inImagePath as the path to save the loadedImg.
                 appState.steganoObj.saveImage(appState.loadedImg, appState.inImagePath);
                 appState.updateFiles();
                 appState.alteredImageNotSaved = false;
@@ -208,7 +216,7 @@ namespace appUI
 
     //************************************************************************************************************//
     //Creates popups for any of the flags in AppState if set to true.
-    void renderPopUps(){
+    void renderPopUps(AppState& appState){
         if(appState.noImageWarning){
             ImGui::OpenPopup("Warning: No Image Set");
         }
@@ -272,7 +280,7 @@ namespace appUI
 
     //************************************************************************************************************//
     //Loads a texture from image file stored at path, also where image data is loaded into loadedImg
-    GLuint loadTexture(const std::string& path){
+    GLuint loadTexture(const std::string& path, AppState& appState){
         //Clear previous laodedImg data before loading new Image
         appState.steganoObj.cleanImage(appState.loadedImg);
         appState.loadedImg = appState.steganoObj.loadAndConvert(path); 
