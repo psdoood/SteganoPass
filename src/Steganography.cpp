@@ -19,7 +19,7 @@ bool Steganography::hideData(Image& img, const std::vector<uint8_t>& data){
     //Hide the actual bits that are stored in data 
     for(size_t i = 8; i < totalPixels * 4; i++){
         if(dataIndex >= data.size()){
-            break; //All data has been hidden
+            break; 
         }
         bool dataBit = (data[dataIndex] >> (7 - bitIndex) & 1);
         img.data[i] = (img.data[i] & 0xFE) | dataBit;
@@ -92,17 +92,14 @@ Image Steganography::loadAndConvert(const std::string& inPath){
     img.width = width;
     img.channels = 4;
 
-    //TODO -> save original format to originalFormat
-
     return img;
 }
 
 //************************************************************************************************************//
-
-//TODO -> error checking 
+ 
 bool Steganography::saveImage(const Image& img, const std::string& outPath){
     if(stbi_write_png(outPath.c_str(), img.width, img.height, 4, img.data, img.width * 4) == 0) {
-        std::cerr << "FAILED TO SAVE THE IMAGE" << std::endl;
+        std::cerr << "FAILED TO SAVE THE IMAGE TO: " << outPath << std::endl;
         return false;
     }
     return true;
@@ -114,16 +111,10 @@ void Steganography::cleanImage(Image& img){
     if(img.data != nullptr){
         stbi_image_free(img.data);
         img.data = nullptr;
-        img.width = 0;
-        img.height = 0;
-        img.channels = 0;
     }
-}
-
-//************************************************************************************************************//
-        
-std::string Steganography::getOriginalFormat(){
-    return originalFormat;
+    img.width = 0;
+    img.height = 0;
+    img.channels = 0;
 }
 
 //************************************************************************************************************//

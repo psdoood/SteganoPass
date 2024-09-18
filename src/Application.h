@@ -63,11 +63,12 @@ struct AppState{
     }
 
     //Resets masterKeyBuffer, masterKey, dataBuffer, and data for reuse.
-    void cleanKeyAndData(){
+    void cleanControlFields(){
         memset(masterKeyBuffer, 0, sizeof(masterKeyBuffer));
         masterKey.clear();
         memset(dataBuffer, 0, sizeof(dataBuffer));
         data.clear();
+        extractedData.clear();
     }
 
     //Cleans the loaded Image and related variables for use in loading new image.

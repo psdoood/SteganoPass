@@ -133,7 +133,7 @@ namespace appUI
                 std::vector<uint8_t> dataBits(dataStr.begin(), dataStr.end());
                 std::vector<uint8_t> encryptedData = appState.cryptoObj.encryptData(dataBits);
                 appState.steganoObj.hideData(appState.loadedImg, encryptedData);
-                appState.cleanKeyAndData();
+                appState.cleanControlFields();
                 appState.alteredImageNotSaved = true;
             }
         }
@@ -149,7 +149,7 @@ namespace appUI
                 std::vector<uint8_t> decryptedData = appState.cryptoObj.decryptData(foundData);
                 std::string decryptedString(decryptedData.begin(), decryptedData.end());
                 appState.extractedData = decryptedString;
-                appState.cleanKeyAndData();
+                appState.cleanControlFields();
             }
         }
         ImGui::End();
@@ -199,7 +199,7 @@ namespace appUI
         }
 
         if(ImGui::Button("Clear Control Data")){
-            appState.cleanKeyAndData();
+            appState.cleanControlFields();
             appState.extractedData.clear();
         }
 

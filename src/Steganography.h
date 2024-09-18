@@ -36,22 +36,14 @@ class Steganography {
         //Loads and converts image to PNG format
         Image loadAndConvert(const std::string& inPath);
         
-        //Saves the new image to new location 
+        //Saves the loaded image to location specified in outPath
         bool saveImage(const Image& img, const std::string& outPath);
 
         //Cleans image data from memory
         void cleanImage(Image& img);
 
-        //Returns original format of the input image
-        std::string getOriginalFormat();
-
-        //Converts binary data to string
+        //Converts binary data to type string
         std::string convertToStr(const std::vector<uint8_t>& data);
-    
-    private:
-        //The format of the input image
-        std::string originalFormat;
-        Image loadedImg; //NOT CURRENTLY USING 
 };
 
 #endif 
