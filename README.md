@@ -9,6 +9,9 @@ This is a lightweight, privacy focused password concealer that uses steganograph
 - **Multiple Format Support** - Compatible with image formats such as JPG, BMP, PNG, TGA, and PSD.
 - **Simple GUI** - Intuitive interface for hiding and extracting passwords from images easily.
 - **File Explorer** - Built in file navigation system for easy image selection.
+  
+![noImageGUI](https://github.com/user-attachments/assets/ca3edf41-5d21-49cc-aaa2-abfbc42d6af4)
+![loadedImageGUI](https://github.com/user-attachments/assets/59fe9675-04e5-4f93-aa35-277982de914e)
 
 ## Requirements
 - **CMake** - (3.14 or higher)
@@ -21,12 +24,15 @@ This is a lightweight, privacy focused password concealer that uses steganograph
 - **Linux** - Needs Testing/ Minor Adjustments
 
 ## Installation 
-`Note: I have not tested linux or macOS yet.`
+Note: I have not tested SteganoPass on linux or macOS yet.
 1. Clone the repository
 > git clone https://github.com/psdoood/SteganoPass.git
 - **For Windows Users** - I have provided batch files in the `batch` diretory to simplify the building process.
+ 
     2. **build.bat** - Either double click or execute this file to start the build process. After it is complete an exe can be found in `build/Release` called `SteganoPass.exe`.
+  
     3. **run.bat** - Alternatively, you can execute this to run the gtest files and the executable.
+  
     4. **clean.bat** - Execute this if you want to clean the build directory. 
 2. Navigate to cloned repository
 > cd SteganoPass
