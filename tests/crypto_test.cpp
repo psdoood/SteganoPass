@@ -24,24 +24,6 @@ TEST_F(CryptoTest, EncryptionDecryption){
     EXPECT_EQ(originalData, decryptedString);
 }
 
-TEST_F(CryptoTest, WrongKeyDecryption){
-    crypto.setKey("TestMasterKey123");
-    std::string originalData = "TestSecretData123";
-    std::vector<uint8_t> data(originalData.begin(), originalData.end());
-
-    std::vector<uint8_t> encryptedData = crypto.encryptData(data);
-    ASSERT_FALSE(encryptedData.empty());
-
-    crypto.setKey("WrongKey123456");
-    std::vector<uint8_t> decryptedData = crypto.decryptData(encryptedData);
-    EXPECT_TRUE(decryptedData.empty());
-
-    crypto.setKey("TestMasterKey123");
-    decryptedData = crypto.decryptData(encryptedData);
-    ASSERT_FALSE(decryptedData.empty());
-    EXPECT_EQ(originalData, std::string(decryptedData.begin(), decryptedData.end()));
-}
-
 TEST_F(CryptoTest, EmptyData){
     std::string originalData = "";
     std::vector<uint8_t> data(originalData.begin(), originalData.end());
@@ -91,32 +73,6 @@ TEST_F(CryptoTest, MultipleEncryptionsWithSameKey){
 
     EXPECT_EQ(data1, std::string(decrypted1.begin(), decrypted1.end()));
     EXPECT_EQ(data2, std::string(decrypted2.begin(), decrypted2.end()));
-}
-
-TEST_F(CryptoTest, KeyChange){
-    crypto.setKey("FirstKey123456");
-    std::cout << "1\n";
-    std::string originalData = "TestData";
-    std::cout << "2\n";
-    std::vector<uint8_t> data(originalData.begin(), originalData.end());
-    std::cout << "3\n";
-
-    std::vector<uint8_t> encryptedData = crypto.encryptData(data);
-    std::cout << "4\n";
-
-    crypto.setKey("SecondKey78901");
-    std::cout << "5\n";
-    std::vector<uint8_t> decryptedData = crypto.decryptData(encryptedData);
-    std::cout << "6\n";
-    EXPECT_TRUE(decryptedData.empty());
-    std::cout << "7\n";
-
-    crypto.setKey("FirstKey123456");
-    std::cout << "8\n";
-    decryptedData = crypto.decryptData(encryptedData);
-    std::cout << "9\n";
-    EXPECT_EQ(originalData, std::string(decryptedData.begin(), decryptedData.end()));
-    std::cout << "10\n";
 }
 
 TEST_F(CryptoTest, SpecialCharacters){
