@@ -46,11 +46,16 @@ This is a lightweight, privacy focused password concealer that uses steganograph
 5. Now save the image using the options in the settings window.
 6. To retrieve password, select image containing the hidden data, enter the key, and click "Extract Data from Image".
 
-## Acknowledgements
+## Contributing
+Contributions are allowed! Feel free to submit a pull request.
 
+## Acknowledgements
 - [ImGui](https://github.com/ocornut/imgui) for the GUI elements.
 - [stb](https://github.com/nothings/stb) for image loading and writing.
 - [tinyaes](https://github.com/kokke/tiny-AES-c) for simple AES encryption.
+
+## License
+SteganoPass is licensed under the MIT [License.](LICENSE)
 
 ## Disclaimer
 This code was a personal project. Use trusted and reputable password managers for sensitive information. 
