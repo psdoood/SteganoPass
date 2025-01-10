@@ -104,7 +104,7 @@ namespace appUI
                 appState.lastLoadedPath = appState.inImagePath;
             }
             ImGui::SetCursorPos(ImVec2((halfWidth - imageSize.x) * 0.5f, (topSectionHeight - imageSize.y) * 0.5f));
-            ImGui::Image((void*)(intptr_t)appState.inImageTexture, imageSize);
+            ImGui::Image((ImTextureID)appState.inImageTexture, imageSize);
         }
         ImGui::End();
     }
